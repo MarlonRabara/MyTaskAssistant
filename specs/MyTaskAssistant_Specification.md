@@ -1,5 +1,5 @@
 # MyTaskAssistant Specification
-**Application Version:** v3.5.11  
+**Application Version:** v3.6.1  
 **Last Updated:** 2026-07-23
 
 ## Overview
@@ -831,3 +831,21 @@ This permits time spent on blocked, deferred, canceled, or otherwise interrupted
 
 - Save validation prevents a task from retaining `Not Started` status when Percent Complete is greater than `0%`.
 - The user must select an appropriate active status before saving progress greater than zero.
+
+
+## v3.6.0 Terminal Task Rollups and Report Totals
+
+- Parent calculations use terminal descendants only. Intermediate parent values and stored direct parent values never contribute to parent rollups, preventing double counting.
+- Parent Estimated Hours, Time Spent, and Estimated Effort Without AI are sums of terminal descendant values. Missing numeric values contribute zero.
+- Parent Percent Complete is an Estimated Hours-weighted average of terminal descendant progress. If one or more terminal descendants lack Estimated Hours, it falls back to a task-count average. Parent progress is displayed as a whole number.
+- Parent status is calculated from terminal descendants: Completed only when all are completed; Not Started only when all are Not Started at 0%; Canceled only when all are canceled; Blocked or Deferred only when all unfinished terminal work meets that state; otherwise In Progress.
+- Parent status rows display a concise terminal-descendant summary and a tooltip with status counts and calculated progress.
+- Parent AI Assistance is calculated from positive Estimated Effort Without AI terminal values. Parent AI Hours Saved is the sum of individually valid terminal AI Hours Saved values; incomplete AI productivity records are excluded and identified in the tooltip.
+- Parent calculated fields are read-only. Parent completion checkboxes and Mark Complete actions are disabled while terminal descendants remain incomplete, with an explanation directing the user to Sub-Tasks.
+- Weekly Timesheet and AI Analysis reports include terminal work tasks only. Parent rows do not contribute to report grand totals, preventing double counting.
+
+
+## v3.6.1 Condensed Parent Status Summary
+
+- Parent rows use the compact status format `Status · completed/terminal`, for example `In Progress · 1/3`.
+- The parent status tooltip expands the compact value into plain language, including completed and blocked terminal task counts, calculated progress, and the per-status breakdown.

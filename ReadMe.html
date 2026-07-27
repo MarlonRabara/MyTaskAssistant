@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>MyTaskAssistant v3.5.11 – User Guide</title>
+  <title>MyTaskAssistant v3.6.1 – User Guide</title>
   <style>
     :root {
       --bg: #eef2f7;
@@ -403,7 +403,7 @@
             monitoring AI-assisted productivity, and producing weekly HTML timesheets.
           </p>
         </div>
-        <div class="version">v3.5.11</div>
+        <div class="version">v3.6.1</div>
       </div>
 
       <div class="hero-grid">
@@ -579,6 +579,9 @@
            </p>
            <p>
              A parent AI Assistance slider is also read-only. Its value is an Estimated Effort Without AI-weighted average of descendant AI Assistance percentages. Hover over the disabled slider for the formula, included task count, total Estimated Effort Without AI, and calculated percentage.
+           </p>
+           <p>
+             Parent values use terminal work tasks only, so intermediate parent values are never added again. Parent progress is Estimated Hours-weighted when all terminal tasks have estimates; otherwise it uses a task-count average. Parent status is calculated from terminal statuses and uses a concise summary such as <b>In Progress · 1/3</b>. Hover over it for a plain-language explanation, calculated progress, and status counts. Weekly Timesheet and AI Analysis totals also use terminal work tasks only to prevent double counting.
            </p>
 
           <h3>Dependencies</h3>
@@ -929,7 +932,7 @@
     </div>
 
     <footer class="footer">
-      MyTaskAssistant v3.5.11 · Standalone local-first application guide · Generated for distribution with the application package
+      MyTaskAssistant v3.6.1 · Standalone local-first application guide · Generated for distribution with the application package
     </footer>
   </div>
 </body>

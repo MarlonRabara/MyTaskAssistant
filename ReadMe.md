@@ -1,6 +1,6 @@
 # MyTaskAssistant
 
-**Version:** v3.5.11
+**Version:** v3.6.1
 
 A local-first, single-file task manager for organizing projects, tracking effort, monitoring AI-assisted productivity, and producing weekly HTML timesheets. No installation, no backend, no database, no account — just open one HTML file in a modern browser.
 
@@ -18,6 +18,8 @@ A local-first, single-file task manager for organizing projects, tracking effort
 - **Projects and tasks** — organize tasks by project, with subtasks, parent/child relationships, cloning, statuses, priorities, and due dates.
 - **Clear top actions** — use **Load Tasks** to open a saved task file. Every top-toolbar action includes a hover tooltip that explains what it does.
 - **Parent task rollups** — parent Estimated Hours, Time Spent, and Estimated Effort Without AI are read-only sums of all child and nested-child tasks. Parent AI Assistance is a read-only Estimated Effort Without AI-weighted average. A parent cannot be completed until every child and nested child is complete.
+- **Terminal-only reporting** — rollups, Weekly Timesheet, and AI Analysis count terminal work tasks only. Parent and intermediate summary tasks never add duplicate hours or AI savings to report totals.
+- **Parent status summary** — parent rows use a compact format such as `In Progress · 1/3`; hover over it for a plain-language explanation, calculated progress, and terminal status counts.
 - **Filters and views** — search, project/status/due-date filters (including Due Last Week and Due Next Month), Active/Completed/Overdue navigation, a Most Recent view, and hide-completed toggle.
 - **Most Recent** — a left-panel view showing up to 10 tasks with the newest creation dates, newest first, after active filters are applied. Hover over it in the app to see the filtering criteria.
 - **Due Next Month** — a Due Date dropdown option that shows tasks due in the next calendar month. It is not a left-panel navigation view.

@@ -1347,7 +1347,7 @@
   <path d="M36 32.5v7M32.5 36h7" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/>
 </svg></div>
         <div>
-          <h1>MyTaskAssistant <span class="version-badge">v3.5.10</span></h1>
+          <h1>MyTaskAssistant <span class="version-badge">v3.6.1</span></h1>
           <p>Personal task manager</p>
         </div>
       </div>
@@ -1552,6 +1552,8 @@
           <option>In Progress</option>
           <option>Waiting</option>
           <option>Blocked</option>
+          <option>Deferred</option>
+          <option>Canceled</option>
           <option>Completed</option>
         </select>
       </div>
@@ -1999,20 +2001,57 @@
       return childTasks(task.id).length > 0;
     }
 
-    function taskRollup(task) {
-      const descendants = descendantTasks(task.id);
-      if (!descendants.length) return null;
+    function terminalDescendantTasks(task) {
+      return descendantTasks(task.id).filter(descendant => !hasChildren(descendant));
+    }
 
-      const sum = field => descendants.reduce((total, child) => total + Number(child[field] || 0), 0);
+    function validAiHoursSaved(task) {
+      const effortWithoutAI = Number(task.estimatedEffortWithoutAI);
+      const timeSpent = Number(task.timeSpent);
+      const aiAssistance = Number(task.aiAssistancePercentage || 0);
+      return aiAssistance > 0 && Number.isFinite(effortWithoutAI) && effortWithoutAI > timeSpent && Number.isFinite(timeSpent)
+        ? effortWithoutAI - timeSpent
+        : null;
+    }
+
+    function taskRollup(task) {
+      const terminals = terminalDescendantTasks(task);
+      if (!terminals.length) return null;
+
+      const sum = field => terminals.reduce((total, child) => total + Number(child[field] || 0), 0);
       const totalEffortWithoutAI = sum("estimatedEffortWithoutAI");
-      const weightedAIAssistance = totalEffortWithoutAI > 0
-        ? descendants.reduce((total, child) => total + (Number(child.aiAssistancePercentage || 0) * Number(child.estimatedEffortWithoutAI || 0)), 0) / totalEffortWithoutAI
+      const aiWeightedTasks = terminals.filter(child => Number(child.estimatedEffortWithoutAI) > 0);
+      const aiWeightTotal = aiWeightedTasks.reduce((total, child) => total + Number(child.estimatedEffortWithoutAI), 0);
+      const missingEstimatedHours = terminals.filter(child => !(Number(child.estimatedHours) > 0)).length;
+      const estimatedHours = sum("estimatedHours");
+      const percentComplete = missingEstimatedHours > 0
+        ? terminals.reduce((total, child) => total + Number(child.percentComplete || 0), 0) / terminals.length
+        : terminals.reduce((total, child) => total + (Number(child.percentComplete || 0) * Number(child.estimatedHours || 0)), 0) / estimatedHours;
+      const allCompleted = terminals.every(child => isComplete(child));
+      const allNotStarted = terminals.every(child => child.status === "Not Started" && Number(child.percentComplete || 0) === 0);
+      const allCanceled = terminals.every(child => child.status === "Canceled");
+      const unfinished = terminals.filter(child => !isComplete(child) && child.status !== "Canceled");
+      const hasInProgress = unfinished.some(child => child.status === "In Progress");
+      const allBlocked = unfinished.length > 0 && unfinished.every(child => child.status === "Blocked" || child.dependsOn.some(id => !isComplete(data.tasks.find(candidate => candidate.id === id) || {})));
+      const allDeferred = unfinished.length > 0 && unfinished.every(child => child.status === "Deferred");
+      const status = allCompleted ? "Completed" : allCanceled ? "Canceled" : allNotStarted ? "Not Started" : allBlocked && !hasInProgress ? "Blocked" : allDeferred && !hasInProgress ? "Deferred" : "In Progress";
+      const validAiTasks = terminals.map(child => validAiHoursSaved(child)).filter(value => value !== null);
+      const weightedAIAssistance = aiWeightTotal > 0
+        ? aiWeightedTasks.reduce((total, child) => total + (Number(child.aiAssistancePercentage || 0) * Number(child.estimatedEffortWithoutAI || 0)), 0) / aiWeightTotal
         : 0;
       return {
-        estimatedHours: sum("estimatedHours"),
+        estimatedHours,
         timeSpent: sum("timeSpent"),
         estimatedEffortWithoutAI: totalEffortWithoutAI,
-        aiAssistancePercentage: weightedAIAssistance
+        aiAssistancePercentage: weightedAIAssistance,
+        percentComplete: allCompleted ? 100 : Math.round(percentComplete || 0),
+        status,
+        aiHoursSaved: validAiTasks.reduce((total, value) => total + value, 0),
+        terminalCount: terminals.length,
+        missingEstimatedHours,
+        validAiTaskCount: validAiTasks.length,
+        excludedAiTaskCount: terminals.length - validAiTasks.length,
+        latestDescendantDueDate: terminals.map(child => child.dueDate).filter(Boolean).sort().at(-1) || ""
       };
     }
 
@@ -2021,7 +2060,7 @@
     }
 
     function parentAIAssistanceTooltip(task, rollup) {
-      const descendants = descendantTasks(task.id);
+      const descendants = terminalDescendantTasks(task);
       const totalEffortWithoutAI = rollup?.estimatedEffortWithoutAI || 0;
       const percentage = Math.round(rollup?.aiAssistancePercentage || 0);
       return `This parent task value is calculated from ${descendants.length} child task${descendants.length === 1 ? "" : "s"}.
@@ -2035,13 +2074,27 @@ Total Estimated Effort Without AI: ${totalEffortWithoutAI.toFixed(2)} h
 Calculated AI Assistance: ${percentage}%`;
     }
 
+    function parentStatusDetails(task, rollup) {
+      const terminals = terminalDescendantTasks(task);
+      const counts = terminals.reduce((result, child) => {
+        result[child.status] = (result[child.status] || 0) + 1;
+        return result;
+      }, {});
+      const complete = terminals.filter(child => isComplete(child)).length;
+      const blocked = counts.Blocked || 0;
+      const summary = `${rollup.status} · ${complete}/${terminals.length}${blocked ? ` · ${blocked} blocked` : ""}`;
+      const breakdown = Object.entries(counts).map(([status, count]) => `${status}: ${count}`).join("\n");
+      return { summary, tooltip: `Calculated parent status: ${rollup.status}.\n${complete} of ${terminals.length} terminal sub-task${terminals.length === 1 ? " is" : "s are"} complete.${blocked ? `\n${blocked} terminal sub-task${blocked === 1 ? " is" : "s are"} blocked.` : ""}\nOverall progress: ${rollup.percentComplete}%.\n\nStatus details:\n${breakdown}` };
+    }
+
     function hasIncompleteDescendants(task) {
-      return descendantTasks(task.id).some(child => !isComplete(child));
+      return terminalDescendantTasks(task).some(child => !isComplete(child));
     }
 
     function canCompleteTask(task) {
       if (!hasIncompleteDescendants(task)) return true;
-      alert(`"${task.title}" cannot be completed until all child tasks are completed.`);
+      const incompleteCount = terminalDescendantTasks(task).filter(child => !isComplete(child)).length;
+      alert(`This task cannot be completed because ${incompleteCount} sub-task${incompleteCount === 1 ? "" : "s"} remain incomplete. Review the Sub-Tasks tab.`);
       return false;
     }
 
@@ -2229,6 +2282,13 @@ Calculated AI Assistance: ${percentage}%`;
     }
 
     function aiHoursSavedDetails(task) {
+      if (Number.isFinite(Number(task.aiHoursSaved)) && task.terminalCount) {
+        const excluded = Number(task.excludedAiTaskCount || 0);
+        return {
+          display: `${Number(task.aiHoursSaved).toFixed(2)} h`,
+          tooltip: `AI Hours Saved: ${Number(task.aiHoursSaved).toFixed(2)} h\n\nCalculated from ${task.validAiTaskCount} terminal sub-task${task.validAiTaskCount === 1 ? "" : "s"}.${excluded ? `\n${excluded} sub-task${excluded === 1 ? " was" : "s were"} excluded because AI-effort information is incomplete.` : ""}`
+        };
+      }
       const estimated = task.estimatedEffortWithoutAI;
       const actual = task.timeSpent;
       const assistanceRaw = task.aiAssistancePercentage;
@@ -2293,13 +2353,16 @@ Calculated AI Assistance: ${percentage}%`;
           const dependency = data.tasks.find(t => String(t.id) === String(id));
           return dependency && !isComplete(dependency);
         });
-        const displayStatus = blockedBy.length && !isComplete(task) ? "Blocked" : task.status;
+        const displayTask = taskValuesForDisplay(task);
+        const rollup = taskRollup(task);
+        const displayStatus = rollup ? rollup.status : (blockedBy.length && !isComplete(task) ? "Blocked" : task.status);
         const statusClass = displayStatus.toLowerCase().replaceAll(" ", "-");
         const dependencies = task.dependsOn.length
           ? task.dependsOn.map(id => `<span class="dependency-chip">${escapeHtml(taskNameById(id))}</span>`).join("")
           : '<span class="notes-cell">None</span>';
-        const displayTask = taskValuesForDisplay(task);
         const aiHoursSaved = aiHoursSavedDetails(displayTask);
+        const parentStatus = rollup ? parentStatusDetails(task, rollup) : null;
+        const statusTooltip = parentStatus?.tooltip || "";
 
         return `
           <tr class="task-row" data-task-id="${escapeHtml(task.id)}" data-parent-id="${escapeHtml(task.parentId || "")}">
@@ -2326,11 +2389,11 @@ Calculated AI Assistance: ${percentage}%`;
               </div>
             </td>
             <td>${escapeHtml(projectNameById(task.projectId) || "—")}</td>
-            <td><span class="status ${statusClass}">${escapeHtml(displayStatus)}</span></td>
+            <td><span class="status ${statusClass}" title="${escapeHtml(statusTooltip)}">${escapeHtml(parentStatus?.summary || displayStatus)}</span></td>
             <td>
               <div class="progress-row">
-                <div class="progress-track"><div class="progress-fill" style="width:${task.percentComplete}%"></div></div>
-                <div class="progress-text">${task.percentComplete}%</div>
+                <div class="progress-track"><div class="progress-fill" style="width:${displayTask.percentComplete}%"></div></div>
+                <div class="progress-text">${displayTask.percentComplete}%</div>
               </div>
             </td>
             <td><span title="${escapeHtml(hoursTooltip(displayTask))}">${escapeHtml(formatHours(displayTask.timeSpent))}</span></td>
@@ -2502,7 +2565,7 @@ Calculated AI Assistance: ${percentage}%`;
         ...(data.metadata || {}),
         application: "MyTaskAssistant",
         schemaVersion: "1.0",
-        applicationVersion: "v3.5.4",
+        applicationVersion: "v3.6.1",
         updatedAt: new Date().toISOString()
       };
       const writable = await fileHandle.createWritable();
@@ -2540,7 +2603,7 @@ Calculated AI Assistance: ${percentage}%`;
       const payload = {
         exportType: "current-view",
         exportedAt: new Date().toISOString(),
-        applicationVersion: "v3.5.4",
+        applicationVersion: "v3.6.1",
         filters: currentFilterSnapshot(),
         taskCount: visibleTasks.length,
         projects: data.projects.filter(project => referencedProjectIds.includes(project.id)),
@@ -2615,12 +2678,12 @@ Calculated AI Assistance: ${percentage}%`;
       $("taskIdInput").value = proposedTaskId;
       $("taskTitleInput").value = task?.title ?? "";
       $("taskProjectInput").value = task?.projectId ?? defaults.projectId ?? "";
-      $("taskStatusInput").value = task?.status ?? "Not Started";
-      $("taskProgressInput").value = task?.percentComplete ?? 0;
+      $("taskStatusInput").value = displayTask?.status ?? "Not Started";
+      $("taskProgressInput").value = displayTask?.percentComplete ?? 0;
       $("taskHoursInput").value = displayTask?.timeSpent ?? 0;
       $("estimatedHoursInput").value = displayTask?.estimatedHours ?? "";
       $("estimatedEffortWithoutAIInput").value = displayTask?.estimatedEffortWithoutAI ?? "";
-      ["taskHoursInput", "estimatedHoursInput", "estimatedEffortWithoutAIInput"].forEach(id => {
+      ["taskStatusInput", "taskProgressInput", "taskHoursInput", "estimatedHoursInput", "estimatedEffortWithoutAIInput"].forEach(id => {
         $(id).disabled = hasChildTasks;
         $(id).title = hasChildTasks
           ? "This parent task value is calculated from its child tasks."
@@ -2650,8 +2713,15 @@ Calculated AI Assistance: ${percentage}%`;
       renderSelectedDependencies();
       closeTypeaheadResults();
       const showMarkComplete = task && !isComplete(task);
+      const incompleteDescendantCount = task && rollup ? terminalDescendantTasks(task).filter(child => !isComplete(child)).length : 0;
       $("markCompleteBtn").style.display = showMarkComplete ? "inline-flex" : "none";
       $("markCompleteTopBtn").style.display = showMarkComplete ? "inline-flex" : "none";
+      ["markCompleteBtn", "markCompleteTopBtn"].forEach(id => {
+        $(id).disabled = incompleteDescendantCount > 0;
+        $(id).title = incompleteDescendantCount > 0
+          ? `This task cannot be completed because ${incompleteDescendantCount} sub-task${incompleteDescendantCount === 1 ? "" : "s"} remain incomplete. Review the Sub-Tasks tab.`
+          : "Mark Complete";
+      });
       $("taskDialog").showModal();
     }
 
@@ -3018,6 +3088,7 @@ Calculated AI Assistance: ${percentage}%`;
 
     function timesheetEligibleTasks() {
       return data.tasks
+        .filter(task => !hasChildren(task))
         .filter(task => Number(task.timeSpent || 0) > 0)
         .filter(task => task.status !== "Not Started")
         .sort((a, b) =>
@@ -3153,11 +3224,6 @@ Calculated AI Assistance: ${percentage}%`;
         const cell = document.querySelector(`[data-timesheet-row-total="${rowIndex}"]`);
         if (cell) cell.textContent = rowTotal ? rowTotal.toFixed(2) : "";
       });
-      $("percentageOfAIAssistanceInput").disabled = hasChildTasks;
-      $("percentageOfAIAssistanceInput").title = hasChildTasks
-        ? "This parent task value is calculated from its child tasks."
-        : "";
-
       const grandCell = $("timesheetGrandTotal");
       if (grandCell) grandCell.textContent = grandTotal.toFixed(2);
       $("timesheetTaskCount").textContent = String(currentTimesheetModel.rows.length);
