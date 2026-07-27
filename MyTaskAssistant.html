@@ -1056,7 +1056,8 @@
       padding-right: 58px;
     }
 
-    .timesheet-dialog #closeTimesheetDialogBtn {
+    .timesheet-dialog #closeTimesheetDialogBtn,
+    .timesheet-dialog #closeAiAnalysisDialogBtn {
       position: absolute;
       top: 18px;
       right: 18px;
@@ -1071,7 +1072,8 @@
       color: #4d5664;
     }
 
-    .timesheet-dialog #closeTimesheetDialogBtn:hover {
+    .timesheet-dialog #closeTimesheetDialogBtn:hover,
+    .timesheet-dialog #closeAiAnalysisDialogBtn:hover {
       background: #f3f5f8;
       color: #20242b;
     }
@@ -1265,7 +1267,7 @@
   <path d="M36 32.5v7M32.5 36h7" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/>
 </svg></div>
         <div>
-          <h1>MyTaskAssistant <span class="version-badge">v3.4</span></h1>
+          <h1>MyTaskAssistant <span class="version-badge">v3.5.2</span></h1>
           <p>Personal task manager</p>
         </div>
       </div>
@@ -1293,6 +1295,7 @@
           <button class="btn btn-secondary" id="openBtn" type="button">Open JSON</button>
           <button class="btn btn-secondary" id="exportViewBtn" type="button" title="Export only the tasks shown by the current filters">Export View</button>
           <button class="btn btn-secondary" id="timesheetExportBtn" type="button" title="Create a weekly HTML timesheet">Weekly Timesheet</button>
+          <button class="btn btn-secondary" id="aiAnalysisBtn" type="button" title="Review weekly AI hours saved">🤖 AI Analysis</button>
           <button class="btn btn-secondary" id="exportBtn" type="button" title="Export all incomplete tasks">Export Active</button>
           <button class="btn btn-secondary" id="saveBtn" type="button">Save</button>
           <button class="btn btn-secondary" id="manageProjectsBtn" type="button">Projects</button>
@@ -1362,7 +1365,7 @@
                 <th><button class="sort-header" type="button" data-sort-key="status">Status <span class="sort-indicator" aria-hidden="true"></span></button></th>
                 <th>Progress</th>
                 <th>Hours</th>
-                <th class="ai-efficiency-header" title="AI Efficiency" aria-label="AI Efficiency">
+                <th class="ai-efficiency-header" title="AI Hours Saved is calculated automatically.&#10;&#10;AI Hours Saved =&#10;Estimated Effort Without AI − Time Spent.&#10;&#10;Represents the estimated productivity gained through meaningful AI assistance." aria-label="AI Hours Saved">
                   <svg viewBox="0 0 24 24" aria-hidden="true">
                     <rect x="5" y="7" width="14" height="11" rx="3"></rect>
                     <path d="M12 4v3"></path>
@@ -1469,19 +1472,24 @@
         <input class="field" id="taskProgressInput" type="number" min="0" max="100" step="5" value="0" />
       </div>
       <div class="form-group">
+        <label for="estimatedHoursInput">Estimated hours</label>
+        <input class="field" id="estimatedHoursInput" type="number" min="0" step="0.25" placeholder="Example: 8.0" />
+      </div>
+      <div class="form-group">
         <label for="taskHoursInput">Time spent (hours)</label>
         <input class="field" id="taskHoursInput" type="number" min="0" step="0.25" value="0" placeholder="Example: 1.5" />
       </div>
       <div class="form-group">
-        <label for="estimatedHumanEffortInput">Estimated human effort (hours)</label>
-        <input class="field" id="estimatedHumanEffortInput" type="number" min="0" step="0.25" placeholder="Example: 8.0" />
+        <label for="estimatedEffortWithoutAIInput" title="Estimate how long this task would have taken if AI had not been available.&#10;&#10;Required whenever AI Assistance is greater than 0%.&#10;&#10;This value must be greater than Time Spent.">Estimated Effort Without AI (hours)</label>
+        <input class="field" id="estimatedEffortWithoutAIInput" type="number" min="0" step="0.25" placeholder="Example: 8.0" title="Estimate how long this task would have taken if AI had not been available.&#10;&#10;Required whenever AI Assistance is greater than 0%.&#10;&#10;This value must be greater than Time Spent." />
+        <div class="typeahead-helper">Estimate how long this task would have taken if AI had not been available. Required whenever AI Assistance is greater than 0%.</div>
       </div>
       <div class="form-group full ai-slider-group">
         <div class="slider-label-row">
-          <label for="percentageOfAIAssistanceInput">Percentage of AI assistance</label>
+          <label for="percentageOfAIAssistanceInput" title="The estimated percentage of work that AI accelerated or meaningfully improved.&#10;&#10;Record AI Assistance only when AI produced measurable productivity gains.">Percentage of AI assistance</label>
           <output id="percentageOfAIAssistanceValue" for="percentageOfAIAssistanceInput">0%</output>
         </div>
-        <input id="percentageOfAIAssistanceInput" type="range" min="0" max="100" step="5" value="0" />
+        <input id="percentageOfAIAssistanceInput" type="range" min="0" max="100" step="5" value="0" title="The estimated percentage of work that AI accelerated or meaningfully improved.&#10;&#10;Record AI Assistance only when AI produced measurable productivity gains." />
         <div class="slider-scale" aria-hidden="true"><span>0%</span><span>100%</span></div>
       </div>
       <div class="form-group">
@@ -1555,6 +1563,32 @@
     </div>
   </dialog>
 
+
+  <dialog id="aiAnalysisDialog" class="dialog timesheet-dialog">
+    <div class="dialog-header">
+      <div>
+        <h2>AI Analysis</h2>
+        <p>Review AI hours saved for tasks due in the selected week. This view is read-only.</p>
+      </div>
+      <button class="icon-btn" id="closeAiAnalysisDialogBtn" type="button" title="Close" aria-label="Close">×</button>
+    </div>
+    <div class="dialog-body">
+      <div class="timesheet-toolbar">
+        <div class="form-group">
+          <label for="aiAnalysisWeekInput">Week containing</label>
+          <input class="field" id="aiAnalysisWeekInput" type="date" />
+        </div>
+        <button class="btn btn-secondary" id="generateAiAnalysisBtn" type="button">Generate Analysis</button>
+        <button class="btn btn-primary" id="downloadAiAnalysisHtmlBtn" type="button" disabled>Download HTML</button>
+      </div>
+      <p class="timesheet-help">Includes tasks due in the selected week with a status other than Not Started, Time Spent greater than zero, AI Assistance greater than zero, and Estimated Effort Without AI entered.</p>
+      <div id="aiAnalysisSummary" class="timesheet-summary" aria-label="AI analysis summary"></div>
+      <div class="timesheet-preview-shell">
+        <div id="aiAnalysisPreview" class="timesheet-preview"><div class="timesheet-empty">Choose a week and generate the analysis.</div></div>
+      </div>
+    </div>
+  </dialog>
+
   <script>
     let data = { metadata: {}, projects: [], tasks: [] };
     let fileHandle = null;
@@ -1593,8 +1627,8 @@
     }
 
     function hoursTooltip(task) {
-      const estimated = task.estimatedHumanEffort;
-      const actual = Number(task.hoursSpent || 0);
+      const estimated = task.estimatedHours;
+      const actual = Number(task.timeSpent || 0);
       const estimatedText =
         estimated === "" || estimated === null || estimated === undefined
           ? "Not captured"
@@ -1609,23 +1643,44 @@
         projectId: task.projectId ?? "",
         status: task.status ?? "Not Started",
         percentComplete: Number.isFinite(Number(task.percentComplete)) ? Math.max(0, Math.min(100, Number(task.percentComplete))) : 0,
-        hoursSpent:
-          Number.isFinite(Number(task.hoursSpent))
-            ? Math.max(0, Number(task.hoursSpent))
-            : (Number.isFinite(Number(task.actualEffort))
-                ? Math.max(0, Number(task.actualEffort))
-                : 0),
-        estimatedHumanEffort: task.estimatedHumanEffort === "" || task.estimatedHumanEffort === null || task.estimatedHumanEffort === undefined
-          ? null
-          : (Number.isFinite(Number(task.estimatedHumanEffort)) ? Math.max(0, Number(task.estimatedHumanEffort)) : null),
-        percentageOfAIAssistance:
-          task.percentageOfAIAssistance === "" ||
-          task.percentageOfAIAssistance === null ||
-          task.percentageOfAIAssistance === undefined
+        estimatedHours: (() => {
+          const raw = task.estimatedHours;
+          return raw === "" || raw === null || raw === undefined
+            ? null
+            : (Number.isFinite(Number(raw)) ? Math.max(0, Number(raw)) : null);
+        })(),
+        timeSpent:
+          // Backward compatibility: older JSON files may contain hoursSpent
+          // or actualEffort. Map them into timeSpent on import.
+          Number.isFinite(Number(task.timeSpent))
+            ? Math.max(0, Number(task.timeSpent))
+            : (Number.isFinite(Number(task.hoursSpent))
+                ? Math.max(0, Number(task.hoursSpent))
+                : (Number.isFinite(Number(task.actualEffort))
+                    ? Math.max(0, Number(task.actualEffort))
+                    : 0)),
+        estimatedEffortWithoutAI: (() => {
+          // Backward compatibility: older JSON files may contain
+          // estimatedHumanOnlyEffort or estimatedHumanEffort. Map them into
+          // estimatedEffortWithoutAI on import. Only the new name is saved.
+          const legacy =
+            task.estimatedEffortWithoutAI ??
+            task.estimatedHumanOnlyEffort ??
+            task.estimatedHumanEffort;
+          return legacy === "" || legacy === null || legacy === undefined
+            ? null
+            : (Number.isFinite(Number(legacy)) ? Math.max(0, Number(legacy)) : null);
+        })(),
+        aiAssistancePercentage: (() => {
+          // Backward compatibility: older JSON files may contain
+          // percentageOfAIAssistance. Map it into aiAssistancePercentage.
+          const raw = task.aiAssistancePercentage ?? task.percentageOfAIAssistance;
+          return raw === "" || raw === null || raw === undefined
             ? 0
-            : (Number.isFinite(Number(task.percentageOfAIAssistance))
-                ? Math.max(0, Math.min(100, Number(task.percentageOfAIAssistance)))
-                : 0),
+            : (Number.isFinite(Number(raw))
+                ? Math.max(0, Math.min(100, Number(raw)))
+                : 0);
+        })(),
         priorityOrder: Number.isFinite(Number(task.priorityOrder)) ? Math.max(1, Number(task.priorityOrder)) : 999999,
         dueDate: task.dueDate ?? "",
         notes: task.notes ?? "",
@@ -1915,10 +1970,10 @@
       $("navOverdue").textContent = overdue;
     }
 
-    function aiEfficiencyDetails(task) {
-      const estimated = task.estimatedHumanEffort;
-      const actual = task.hoursSpent;
-      const assistanceRaw = task.percentageOfAIAssistance;
+    function aiHoursSavedDetails(task) {
+      const estimated = task.estimatedEffortWithoutAI;
+      const actual = task.timeSpent;
+      const assistanceRaw = task.aiAssistancePercentage;
 
       const hasEstimated = !(estimated === "" || estimated === null || estimated === undefined);
       const hasActual = !(actual === "" || actual === null || actual === undefined);
@@ -1936,8 +1991,8 @@
 
       if (hasNoAITrackingData) {
         return {
-          display: "0%",
-          tooltip: "AI Efficiency: 0%\n\nNo AI-effort tracking data was captured for this task. The default assumption is no AI assistance, so AI Efficiency = 0%."
+          display: "0.00 h",
+          tooltip: "AI Hours Saved: 0.00 h\n\nNo AI-productivity tracking data was captured for this task. The default assumption is that AI produced no measurable productivity gain, so AI Hours Saved = 0.00 h."
         };
       }
 
@@ -1952,16 +2007,14 @@
       const estimatedHours = Number(estimated);
       const actualHours = Number(actual);
       const savedHours = estimatedHours - actualHours;
-      const savingsRatio = savedHours / estimatedHours;
-      const efficiency = savingsRatio * (assistance / 100) * 100;
-      const roundedEfficiency = assistance <= 0 ? 0 : Math.round(efficiency);
+      const displayedSavedHours = assistance <= 0 ? 0 : savedHours;
 
       const tooltip = assistance <= 0
-        ? `AI Efficiency: 0%\n\nEstimated Human Effort: ${estimatedHours.toFixed(2)} h\nActual (Time Spent): ${actualHours.toFixed(2)} h\nHuman Time Saved: ${savedHours.toFixed(2)} h\nAI Assistance: 0%\n\nNo AI-assistance value was captured, or the value was 0%. The default assumption is no AI assistance, so AI Efficiency = 0%.`
-        : `AI Efficiency: ${roundedEfficiency}%\n\nEstimated Human Effort: ${estimatedHours.toFixed(2)} h\nActual (Time Spent): ${actualHours.toFixed(2)} h\nHuman Time Saved: ${savedHours.toFixed(2)} h\nAI Assistance: ${assistance}%\n\nCalculation:\n((${estimatedHours.toFixed(2)} - ${actualHours.toFixed(2)}) / ${estimatedHours.toFixed(2)}) × ${assistance}%\n= ${roundedEfficiency}%`;
+        ? `AI Hours Saved: 0.00 h\n\nEstimated Effort Without AI: ${estimatedHours.toFixed(2)} h\nActual (Time Spent): ${actualHours.toFixed(2)} h\nAI Assistance: 0%\n\nNo AI-assistance value was captured, or the value was 0%. The default assumption is that AI produced no measurable productivity gain, so AI Hours Saved = 0.00 h.`
+        : `AI Hours Saved: ${displayedSavedHours.toFixed(2)} h\n\nAI Hours Saved is calculated automatically.\n\nAI Hours Saved =\nEstimated Effort Without AI − Time Spent.\n\nEstimated Effort Without AI: ${estimatedHours.toFixed(2)} h\nActual (Time Spent): ${actualHours.toFixed(2)} h\nAI Assistance: ${assistance}%\n\nCalculation:\n${estimatedHours.toFixed(2)} − ${actualHours.toFixed(2)} = ${displayedSavedHours.toFixed(2)} h\n\nRepresents the estimated productivity gained through meaningful AI assistance.`;
 
       return {
-        display: `${roundedEfficiency}%`,
+        display: `${displayedSavedHours.toFixed(2)} h`,
         tooltip
       };
     }
@@ -1985,7 +2038,7 @@
         const dependencies = task.dependsOn.length
           ? task.dependsOn.map(id => `<span class="dependency-chip">${escapeHtml(taskNameById(id))}</span>`).join("")
           : '<span class="notes-cell">None</span>';
-        const aiEfficiency = aiEfficiencyDetails(task);
+        const aiHoursSaved = aiHoursSavedDetails(task);
 
         return `
           <tr class="task-row" data-task-id="${escapeHtml(task.id)}" data-parent-id="${escapeHtml(task.parentId || "")}">
@@ -2019,8 +2072,8 @@
                 <div class="progress-text">${task.percentComplete}%</div>
               </div>
             </td>
-            <td><span title="${escapeHtml(hoursTooltip(task))}">${escapeHtml(formatHours(task.hoursSpent))}</span></td>
-            <td>${aiEfficiency.display ? `<span class="ai-efficiency-value" title="${escapeHtml(aiEfficiency.tooltip)}">${escapeHtml(aiEfficiency.display)}</span>` : ""}</td>
+            <td><span title="${escapeHtml(hoursTooltip(task))}">${escapeHtml(formatHours(task.timeSpent))}</span></td>
+            <td>${aiHoursSaved.display ? `<span class="ai-efficiency-value" title="${escapeHtml(aiHoursSaved.tooltip)}">${escapeHtml(aiHoursSaved.display)}</span>` : ""}</td>
             <td>${escapeHtml(formatDate(task.dueDate))}</td>
             <td>${daysLabel(task)}</td>
             <td><div class="dependency-list">${dependencies}</div></td>
@@ -2182,7 +2235,7 @@
         ...(data.metadata || {}),
         application: "MyTaskAssistant",
         schemaVersion: "1.0",
-        applicationVersion: "v3.4",
+        applicationVersion: "v3.5.2",
         updatedAt: new Date().toISOString()
       };
       const writable = await fileHandle.createWritable();
@@ -2220,7 +2273,7 @@
       const payload = {
         exportType: "current-view",
         exportedAt: new Date().toISOString(),
-        applicationVersion: "v2.7",
+        applicationVersion: "v3.5.2",
         filters: currentFilterSnapshot(),
         taskCount: visibleTasks.length,
         projects: data.projects.filter(project => referencedProjectIds.includes(project.id)),
@@ -2294,11 +2347,12 @@
       $("taskProjectInput").value = task?.projectId ?? defaults.projectId ?? "";
       $("taskStatusInput").value = task?.status ?? "Not Started";
       $("taskProgressInput").value = task?.percentComplete ?? 0;
-      $("taskHoursInput").value = task?.hoursSpent ?? 0;
-      $("estimatedHumanEffortInput").value = task?.estimatedHumanEffort ?? "";
-      $("percentageOfAIAssistanceInput").value = task?.percentageOfAIAssistance ?? 0;
-      $("percentageOfAIAssistanceValue").value = `${task?.percentageOfAIAssistance ?? 0}%`;
-      $("percentageOfAIAssistanceValue").textContent = `${task?.percentageOfAIAssistance ?? 0}%`;
+      $("taskHoursInput").value = task?.timeSpent ?? 0;
+      $("estimatedHoursInput").value = task?.estimatedHours ?? "";
+      $("estimatedEffortWithoutAIInput").value = task?.estimatedEffortWithoutAI ?? "";
+      $("percentageOfAIAssistanceInput").value = task?.aiAssistancePercentage ?? 0;
+      $("percentageOfAIAssistanceValue").value = `${task?.aiAssistancePercentage ?? 0}%`;
+      $("percentageOfAIAssistanceValue").textContent = `${task?.aiAssistancePercentage ?? 0}%`;
       const initialParentId = task?.parentId ?? defaults.parentId ?? null;
       $("taskPriorityInput").value = task?.priorityOrder ?? (siblingTasks(initialParentId).length + 1);
       $("taskDueDateInput").value = task?.dueDate ?? "";
@@ -2476,6 +2530,17 @@
       }
 
       const existing = editingTaskId ? data.tasks.find(t => t.id === editingTaskId) : null;
+
+      const aiAssistanceValue = Math.max(0, Math.min(100, Number($("percentageOfAIAssistanceInput").value || 0)));
+      const effortWithoutAIRaw = $("estimatedEffortWithoutAIInput").value;
+      const effortWithoutAIValue = effortWithoutAIRaw === "" ? null : Math.max(0, Number(effortWithoutAIRaw));
+      const timeSpentValue = Math.max(0, Number($("taskHoursInput").value || 0));
+
+      if (aiAssistanceValue > 0 && (effortWithoutAIValue === null || !(effortWithoutAIValue > timeSpentValue))) {
+        alert("Estimated Effort Without AI must be greater than Time Spent whenever AI Assistance is greater than 0%.\n\nAI Assistance represents measurable productivity gains.");
+        return;
+      }
+
       const task = normalizeTask({
         ...(existing || {}),
         id: existing?.id ?? $("taskIdInput").value,
@@ -2483,9 +2548,10 @@
         projectId: $("taskProjectInput").value,
         status: $("taskStatusInput").value,
         percentComplete: Number($("taskProgressInput").value || 0),
-        hoursSpent: Math.max(0, Number($("taskHoursInput").value || 0)),
-        estimatedHumanEffort: $("estimatedHumanEffortInput").value === "" ? null : Math.max(0, Number($("estimatedHumanEffortInput").value)),
-        percentageOfAIAssistance: Math.max(0, Math.min(100, Number($("percentageOfAIAssistanceInput").value || 0))),
+        estimatedHours: $("estimatedHoursInput").value === "" ? null : Math.max(0, Number($("estimatedHoursInput").value)),
+        timeSpent: timeSpentValue,
+        estimatedEffortWithoutAI: effortWithoutAIValue,
+        aiAssistancePercentage: aiAssistanceValue,
         priorityOrder: Math.max(1, Number($("taskPriorityInput").value || (siblingTasks(selectedParentId).length + 1))),
         dueDate: $("taskDueDateInput").value,
         parentId: selectedParentId || null,
@@ -2507,6 +2573,77 @@
     }
 
 
+
+    let currentAiAnalysisModel = null;
+
+    function buildAiAnalysisModel(selectedDate) {
+      const weekStart = startOfWeek(selectedDate);
+      const weekEnd = new Date(weekStart);
+      weekEnd.setDate(weekEnd.getDate() + 6);
+      const rows = data.tasks.filter(task => {
+        if (!task.dueDate || task.status === "Not Started") return false;
+        const due = new Date(`${task.dueDate}T00:00:00`);
+        return due >= weekStart && due <= weekEnd && Number(task.timeSpent || 0) > 0 && Number(task.aiAssistancePercentage || 0) > 0 && task.estimatedEffortWithoutAI !== null && task.estimatedEffortWithoutAI !== undefined && task.estimatedEffortWithoutAI !== "";
+      }).map(task => ({
+        project: projectNameById(task.projectId) || "—",
+        task: task.title,
+        timeSpent: Number(task.timeSpent || 0),
+        aiAssistance: Number(task.aiAssistancePercentage || 0),
+        withoutAI: Number(task.estimatedEffortWithoutAI || 0),
+        saved: Number(task.estimatedEffortWithoutAI || 0) - Number(task.timeSpent || 0)
+      }));
+      return { weekStart, weekEnd, rows };
+    }
+
+    function renderAiAnalysis() {
+      const model = currentAiAnalysisModel;
+      if (!model || !model.rows.length) {
+        $("aiAnalysisSummary").innerHTML = "";
+        $("aiAnalysisPreview").innerHTML = '<div class="timesheet-empty">No eligible AI-assisted tasks were found for this week.</div>';
+        $("downloadAiAnalysisHtmlBtn").disabled = true;
+        return;
+      }
+      const totalTime = model.rows.reduce((s,r)=>s+r.timeSpent,0);
+      const totalWithoutAI = model.rows.reduce((s,r)=>s+r.withoutAI,0);
+      const totalSaved = model.rows.reduce((s,r)=>s+r.saved,0);
+      $("aiAnalysisSummary").innerHTML = `
+        <span class="timesheet-summary-badge">Tasks Using AI: <strong>${model.rows.length}</strong></span>
+        <span class="timesheet-summary-badge">Time Spent: <strong>${totalTime.toFixed(2)}</strong></span>
+        <span class="timesheet-summary-badge">Without AI: <strong>${totalWithoutAI.toFixed(2)}</strong></span>
+        <span class="timesheet-summary-badge">AI Hours Saved: <strong>${totalSaved.toFixed(2)}</strong></span>`;
+      $("aiAnalysisPreview").innerHTML = `
+        <h3>AI Analysis</h3>
+        <p>${escapeHtml(formatTimesheetDate(model.weekStart))} – ${escapeHtml(formatTimesheetDate(model.weekEnd))}</p>
+        <table><thead><tr><th>Project</th><th>Task</th><th>Time Spent</th><th>Without AI</th><th title="AI Hours Saved — Estimated Effort Without AI minus Time Spent">AI Hours Saved</th></tr></thead>
+        <tbody>${model.rows.map(r=>`<tr><td>${escapeHtml(r.project)}</td><td>${escapeHtml(r.task)}</td><td>${r.timeSpent.toFixed(2)}</td><td>${r.withoutAI.toFixed(2)}</td><td>${r.saved.toFixed(2)}</td></tr>`).join("")}</tbody>
+        <tfoot><tr><th colspan="2">Grand Total</th><th>${totalTime.toFixed(2)}</th><th>${totalWithoutAI.toFixed(2)}</th><th>${totalSaved.toFixed(2)}</th></tr></tfoot></table>`;
+      $("downloadAiAnalysisHtmlBtn").disabled = false;
+    }
+
+    function openAiAnalysisDialog() {
+      $("aiAnalysisWeekInput").value = isoDateLocal(new Date());
+      currentAiAnalysisModel = buildAiAnalysisModel($("aiAnalysisWeekInput").value);
+      renderAiAnalysis();
+      $("aiAnalysisDialog").showModal();
+    }
+
+    function generateAiAnalysis() {
+      currentAiAnalysisModel = buildAiAnalysisModel($("aiAnalysisWeekInput").value);
+      renderAiAnalysis();
+    }
+
+    function standaloneAiAnalysisHtml(model) {
+      const totalTime = model.rows.reduce((s,r)=>s+r.timeSpent,0), totalWithoutAI=model.rows.reduce((s,r)=>s+r.withoutAI,0), totalSaved=model.rows.reduce((s,r)=>s+r.saved,0);
+      return `<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><title>AI Analysis ${isoDateLocal(model.weekStart)}</title><style>body{font-family:Segoe UI,Arial,sans-serif;margin:32px;color:#172033}table{border-collapse:collapse;width:100%}th,td{border:1px solid #ccd3dd;padding:8px;text-align:left}th{background:#eef2f7}.summary{display:flex;gap:12px;flex-wrap:wrap;margin:16px 0}.summary span{border:1px solid #ccd3dd;border-radius:8px;padding:8px 12px}</style></head><body><h1>AI Analysis</h1><p>${formatTimesheetDate(model.weekStart)} – ${formatTimesheetDate(model.weekEnd)}</p><div class="summary"><span>Tasks Using AI: <strong>${model.rows.length}</strong></span><span>Time Spent: <strong>${totalTime.toFixed(2)}</strong></span><span>Without AI: <strong>${totalWithoutAI.toFixed(2)}</strong></span><span>AI Hours Saved: <strong>${totalSaved.toFixed(2)}</strong></span></div><table><thead><tr><th>Project</th><th>Task</th><th>Time Spent</th><th>Without AI</th><th>AI Hours Saved</th></tr></thead><tbody>${model.rows.map(r=>`<tr><td>${escapeHtml(r.project)}</td><td>${escapeHtml(r.task)}</td><td>${r.timeSpent.toFixed(2)}</td><td>${r.withoutAI.toFixed(2)}</td><td>${r.saved.toFixed(2)}</td></tr>`).join("")}</tbody><tfoot><tr><th colspan="2">Grand Total</th><th>${totalTime.toFixed(2)}</th><th>${totalWithoutAI.toFixed(2)}</th><th>${totalSaved.toFixed(2)}</th></tr></tfoot></table></body></html>`;
+    }
+
+    function downloadAiAnalysisHtml() {
+      if (!currentAiAnalysisModel || !currentAiAnalysisModel.rows.length) return;
+      const content = standaloneAiAnalysisHtml(currentAiAnalysisModel);
+      const blob = new Blob([content], {type:"text/html"});
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a"); a.href=url; a.download=`AI_Analysis_${isoDateLocal(currentAiAnalysisModel.weekStart)}_to_${isoDateLocal(currentAiAnalysisModel.weekEnd)}.html`; a.click(); URL.revokeObjectURL(url);
+    }
 
     let currentTimesheetModel = null;
 
@@ -2541,7 +2678,7 @@
 
     function timesheetEligibleTasks() {
       return data.tasks
-        .filter(task => Number(task.hoursSpent || 0) > 0)
+        .filter(task => Number(task.timeSpent || 0) > 0)
         .filter(task => task.status !== "Not Started")
         .sort((a, b) =>
           projectNameById(a.projectId).localeCompare(projectNameById(b.projectId)) ||
@@ -2560,7 +2697,7 @@
           if (dayIndex < 0) return null;
 
           const dailyHours = Array(7).fill(0);
-          dailyHours[dayIndex] = Number(task.hoursSpent || 0);
+          dailyHours[dayIndex] = Number(task.timeSpent || 0);
 
           return {
             taskId: task.id,
@@ -2895,6 +3032,11 @@
       generateTimesheetPreview();
     });
     $("downloadTimesheetHtmlBtn").addEventListener("click", downloadTimesheetHtml);
+    $("aiAnalysisBtn").addEventListener("click", openAiAnalysisDialog);
+    $("closeAiAnalysisDialogBtn").addEventListener("click", () => $("aiAnalysisDialog").close());
+    $("generateAiAnalysisBtn").addEventListener("click", generateAiAnalysis);
+    $("aiAnalysisWeekInput").addEventListener("change", generateAiAnalysis);
+    $("downloadAiAnalysisHtmlBtn").addEventListener("click", downloadAiAnalysisHtml);
     $("exportBtn").addEventListener("click", exportActive);
     $("addBtn").addEventListener("click", () => openTaskDialog());
     $("manageProjectsBtn").addEventListener("click", openProjectDialog);

@@ -1,5 +1,5 @@
 # MyTaskAssistant Specification
-**Application Version:** v3.5.2  
+**Application Version:** v3.5.1  
 **Last Updated:** 2026-07-23
 
 ## Overview
@@ -23,22 +23,22 @@ Design goals:
 
 The visible version displayed in the application header is the authoritative application version.
 
-The application, specification, and README files are under source control and are updated in place. Version-suffixed filename copies are no longer generated.
+Generated application and specification filenames must match that visible version.
 
-The source-controlled filenames are:
+For version `v3.5.1`, the expected filenames are:
 
-- `MyTaskAssistant.html`
-- `specs/MyTaskAssistant_Specification.md`
-- `ReadMe.html` / `ReadMe.md`
+- `MyTaskAssistant_v3.5.1.html`
+- `MyTaskAssistant_Specification_v3.5.1.md`
 
 When the application version changes:
 
 1. Update the visible version badge in the HTML.
 2. Update `metadata.applicationVersion` when JSON is saved.
-3. Update the specification's application version.
-4. Do not create new version-suffixed filenames; source control history tracks versions.
+3. Generate the HTML using the same version in its filename.
+4. Generate the specification using the same version in its filename.
+5. Update the specification's application version.
 
-Legacy sequence-based names such as `Final_v9` should not be used.
+Legacy sequence-based names such as `Final_v9` should not be used for future generated releases.
 
 ---
 
@@ -428,7 +428,7 @@ When data is saved, metadata includes:
 
 ```json
 {
-  "applicationVersion": "v3.5.2"
+  "applicationVersion": "v3.5.1"
 }
 ```
 
@@ -721,18 +721,3 @@ This permits time spent on blocked, deferred, canceled, or otherwise interrupted
 - Replaced the AI Efficiency percentage with AI Hours Saved, calculated as `estimatedEffortWithoutAI - timeSpent`. AI Hours Saved is never stored.
 - Estimated Effort Without AI is required and must be strictly greater than Time Spent whenever AI Assistance is greater than 0%; equality is invalid.
 - Updated labels, helper text, and tooltips to reflect AI Productivity rather than AI Usage: the application measures productivity gains rather than tool usage.
-
-
-## v3.5.2 AI Analysis Restoration and In-Place Versioning
-
-- Restored the `AI Analysis` view from v3.5. A `🤖 AI Analysis` toolbar button opens a read-only, week-based dialog.
-- A task is included in the AI Analysis when:
-  - Its status is not `Not Started`
-  - Its due date falls within the selected Sunday-through-Saturday week
-  - `timeSpent` is greater than zero
-  - `aiAssistancePercentage` is greater than zero
-  - `estimatedEffortWithoutAI` has a value
-- The dialog shows summary badges (Tasks Using AI, Time Spent, Without AI, AI Hours Saved, Average AI %) and a per-task table with a grand-total footer.
-- AI Hours Saved per task is `estimatedEffortWithoutAI - timeSpent` and is never stored.
-- The analysis can be downloaded as a standalone HTML file named `AI_Analysis_<weekStart>_to_<weekEnd>.html`.
-- Source-controlled files (`MyTaskAssistant.html`, `specs/MyTaskAssistant_Specification.md`, `ReadMe.html`, `ReadMe.md`) are now updated in place; version-suffixed filename copies are no longer generated.

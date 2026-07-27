@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>MyTaskAssistant v3.4 – User Guide</title>
+  <title>MyTaskAssistant v3.5.2 – User Guide</title>
   <style>
     :root {
       --bg: #eef2f7;
@@ -403,7 +403,7 @@
             monitoring AI-assisted productivity, and producing weekly HTML timesheets.
           </p>
         </div>
-        <div class="version">v3.4</div>
+        <div class="version">v3.5.2</div>
       </div>
 
       <div class="hero-grid">
@@ -423,10 +423,11 @@
         <a href="#projects">Projects</a>
         <a href="#tasks">Tasks and subtasks</a>
         <a href="#filters">Filters and views</a>
-        <a href="#effort">Time and AI efficiency</a>
+        <a href="#effort">Time and AI productivity</a>
         <a href="#saving">Opening and saving JSON</a>
         <a href="#exports">Exports</a>
         <a href="#timesheet">Weekly timesheet</a>
+        <a href="#ai-analysis">AI analysis</a>
         <a href="#data">Data and privacy</a>
         <a href="#troubleshooting">Troubleshooting</a>
         <a href="#json">JSON reference</a>
@@ -442,15 +443,15 @@
             </thead>
             <tbody>
               <tr>
-                <td><code>MyTaskAssistant_v3.4.html</code></td>
+                <td><code>MyTaskAssistant.html</code></td>
                 <td>The application. Open this file in Chrome, Edge, or another modern desktop browser.</td>
               </tr>
               <tr>
-                <td><code>ReadMe_v3.4.html</code></td>
+                <td><code>ReadMe.html</code></td>
                 <td>This user guide.</td>
               </tr>
               <tr>
-                <td><code>MyTaskAssistant_Specification_v3.4.md</code></td>
+                <td><code>specs/MyTaskAssistant_Specification.md</code></td>
                 <td>Technical and functional specification for maintainers.</td>
               </tr>
               <tr>
@@ -475,7 +476,7 @@
             </div>
             <div class="step">
               <strong>Open the application</strong>
-              Double-click <code>MyTaskAssistant_v3.4.html</code>. It should open in your default browser.
+              Double-click <code>MyTaskAssistant.html</code>. It should open in your default browser.
             </div>
             <div class="step">
               <strong>Open an existing JSON file</strong>
@@ -508,7 +509,7 @@
             </div>
             <div class="card">
               <h3>Task grid</h3>
-              <p>Review project, task, status, progress, time, AI efficiency, due dates, dependencies, notes, and actions.</p>
+              <p>Review project, task, status, progress, time, AI hours saved, due dates, dependencies, notes, and actions.</p>
             </div>
           </div>
           <h3>Common row actions</h3>
@@ -553,7 +554,7 @@
           <div class="steps">
             <div class="step"><strong>Select Add Task</strong>Open the task editor from the upper-right action bar.</div>
             <div class="step"><strong>Enter the essentials</strong>Provide a title, project, status, progress, priority, and due date as needed.</div>
-            <div class="step"><strong>Track work</strong>Enter Time Spent, Estimated Human Effort, and AI Assistance when applicable.</div>
+            <div class="step"><strong>Track work</strong>Enter Time Spent, Estimated Effort Without AI, and AI Assistance when applicable.</div>
             <div class="step"><strong>Add relationships</strong>Choose a parent task for hierarchy and dependency tasks for sequencing.</div>
             <div class="step"><strong>Save</strong>The dialog closes and the task grid refreshes.</div>
           </div>
@@ -608,35 +609,37 @@
         </section>
 
         <section id="effort">
-          <h2>Time Spent and AI Efficiency</h2>
+          <h2>Time Spent and AI Productivity</h2>
           <p class="lead">
             Time Spent is the single source of truth for actual effort. The older separate Actual Effort field is no longer used.
           </p>
+          <div class="callout">
+            MyTaskAssistant measures AI productivity&mdash;not AI usage.
+            Recording AI Assistance indicates that AI delivered measurable efficiency gains while completing the task.
+            If AI did not reduce the effort required&mdash;even if an AI tool was used&mdash;the task should be recorded with AI Assistance = 0%.
+          </div>
 
           <h3>Effort fields</h3>
           <table>
             <thead><tr><th>Field</th><th>Meaning</th></tr></thead>
             <tbody>
-              <tr><td>Estimated Human Effort</td><td>How many hours the task would normally take without the measured savings.</td></tr>
+              <tr><td>Estimated Effort Without AI</td><td>Estimate of how long the task would have taken if AI had not been available. Required whenever AI Assistance is greater than 0%, and must be greater than Time Spent.</td></tr>
               <tr><td>Time Spent</td><td>The actual hours used to complete or advance the task.</td></tr>
-              <tr><td>AI Assistance</td><td>The estimated percentage of the work meaningfully assisted by AI, from 0% to 100%.</td></tr>
+              <tr><td>AI Assistance</td><td>The estimated percentage of work that AI accelerated or meaningfully improved, from 0% to 100%. Record it only when AI produced measurable productivity gains.</td></tr>
             </tbody>
           </table>
 
-          <h3>AI Efficiency calculation</h3>
-          <pre>Human Time Saved = Estimated Human Effort - Time Spent
-
-Savings Ratio = Human Time Saved / Estimated Human Effort
-
-AI Efficiency = Savings Ratio × (AI Assistance / 100)</pre>
+          <h3>AI Hours Saved calculation</h3>
+          <pre>AI Hours Saved = Estimated Effort Without AI - Time Spent</pre>
 
           <div class="callout">
-            Example: estimated effort 10 hours, time spent 4 hours, and AI assistance 80% produces an AI Efficiency value of 48%.
+            Example: Estimated Effort Without AI of 9.5 hours and Time Spent of 5.5 hours produces an AI Hours Saved value of 4.00 h.
+            AI Hours Saved is calculated automatically and is never stored in the JSON file.
           </div>
 
           <h3>Row tooltips</h3>
           <p>
-            Hover over the Hours value to see the estimated and actual hours. Hover over the AI Efficiency percentage for a detailed calculation.
+            Hover over the Hours value to see the estimated and actual hours. Hover over the AI Hours Saved value for a detailed calculation.
             When no AI assistance value is captured, the default assumption is 0%.
           </p>
         </section>
@@ -686,6 +689,11 @@ AI Efficiency = Savings Ratio × (AI Assistance / 100)</pre>
               <tr>
                 <td>Weekly Timesheet</td>
                 <td>Eligible time-bearing tasks for a selected week, with editable daily allocation and totals.</td>
+                <td>Standalone HTML</td>
+              </tr>
+              <tr>
+                <td>🤖 AI Analysis</td>
+                <td>Read-only weekly view of AI-assisted tasks showing Time Spent, AI %, Estimated Effort Without AI, and AI Hours Saved.</td>
                 <td>Standalone HTML</td>
               </tr>
             </tbody>
@@ -741,6 +749,35 @@ AI Efficiency = Savings Ratio × (AI Assistance / 100)</pre>
           <div class="callout success">
             The preview includes sticky day headers and a sticky Grand Total row to remain readable while scrolling.
           </div>
+        </section>
+
+        <section id="ai-analysis">
+          <h2>AI Analysis</h2>
+          <p class="lead">
+            The 🤖 AI Analysis button opens a read-only weekly view that summarizes AI-assisted productivity and the hours saved by using AI.
+          </p>
+
+          <h3>Eligible tasks</h3>
+          <p>A task is included when all of the following are true:</p>
+          <ul class="checklist">
+            <li>Status is anything except Not Started.</li>
+            <li>The task's due date falls within the selected Sunday-through-Saturday week.</li>
+            <li>Time Spent is greater than zero.</li>
+            <li>AI Assistance is greater than zero.</li>
+            <li>Estimated Effort Without AI has a value.</li>
+          </ul>
+
+          <h3>What it shows</h3>
+          <p>
+            Summary badges report Tasks Using AI, total Time Spent, total Estimated Effort Without AI, total AI Hours Saved, and the average AI Assistance percentage.
+            The table lists each eligible task with its project, Time Spent, AI %, Estimated Effort Without AI, and AI Hours Saved, followed by a grand-total row.
+            AI Hours Saved is calculated as Estimated Effort Without AI minus Time Spent and is never stored in the JSON file.
+          </p>
+
+          <h3>Download</h3>
+          <p>
+            Select <b>Download HTML</b> to save a standalone report named <code>AI_Analysis_&lt;weekStart&gt;_to_&lt;weekEnd&gt;.html</code> that can be opened, printed, or shared.
+          </p>
         </section>
 
         <section id="data">
@@ -811,10 +848,10 @@ AI Efficiency = Savings Ratio × (AI Assistance / 100)</pre>
           </details>
 
           <details>
-            <summary>AI Efficiency is blank</summary>
+            <summary>AI Hours Saved is blank</summary>
             <div>
-              A valid estimate is required. Time Spent is used as actual effort. Legacy tasks with no AI tracking data display 0% under the default
-              assumption of no AI assistance.
+              A valid Estimated Effort Without AI value is required. Time Spent is used as actual effort. Legacy tasks with no AI tracking data display 0.00 h under the default
+              assumption that AI produced no measurable productivity gain.
             </div>
           </details>
 
@@ -836,9 +873,10 @@ AI Efficiency = Savings Ratio × (AI Assistance / 100)</pre>
   "projectId": "project-operations",
   "status": "In Progress",
   "percentComplete": 60,
-  "hoursSpent": 2.5,
-  "estimatedHumanEffort": 5,
-  "percentageOfAIAssistance": 50,
+  "estimatedHours": 8,
+  "timeSpent": 2.5,
+  "estimatedEffortWithoutAI": 5,
+  "aiAssistancePercentage": 50,
   "priorityOrder": 1,
   "dueDate": "2026-07-24",
   "notes": "Compile project updates.",
@@ -850,17 +888,19 @@ AI Efficiency = Savings Ratio × (AI Assistance / 100)</pre>
 
           <h3>Important compatibility behavior</h3>
           <ul class="checklist">
-            <li><code>hoursSpent</code> is the current actual-effort field.</li>
-            <li>A legacy <code>actualEffort</code> value may be used as an import fallback when valid Time Spent is unavailable.</li>
+            <li><code>timeSpent</code> is the current actual-effort field.</li>
+            <li>Legacy <code>hoursSpent</code> or <code>actualEffort</code> values are automatically mapped into <code>timeSpent</code> on import.</li>
+            <li>Legacy <code>percentageOfAIAssistance</code> values are automatically mapped into <code>aiAssistancePercentage</code> on import.</li>
+            <li>Legacy <code>estimatedHumanOnlyEffort</code> or <code>estimatedHumanEffort</code> values are automatically mapped into <code>estimatedEffortWithoutAI</code> on import; only the new name is saved.</li>
             <li>Missing AI assistance is normalized to 0%.</li>
-            <li>AI Efficiency is derived at runtime and is not stored as a separate authoritative field.</li>
+            <li>AI Hours Saved is derived at runtime and is not stored as a separate authoritative field.</li>
           </ul>
         </section>
       </main>
     </div>
 
     <footer class="footer">
-      MyTaskAssistant v3.4 · Standalone local-first application guide · Generated for distribution with the application package
+      MyTaskAssistant v3.5.2 · Standalone local-first application guide · Generated for distribution with the application package
     </footer>
   </div>
 </body>
