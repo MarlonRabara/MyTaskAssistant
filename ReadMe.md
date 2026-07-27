@@ -1,6 +1,6 @@
 # MyTaskAssistant
 
-**Version:** v3.5.6
+**Version:** v3.5.7
 
 A local-first, single-file task manager for organizing projects, tracking effort, monitoring AI-assisted productivity, and producing weekly HTML timesheets. No installation, no backend, no database, no account — just open one HTML file in a modern browser.
 

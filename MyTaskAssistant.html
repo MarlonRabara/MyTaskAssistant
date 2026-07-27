@@ -1091,12 +1091,15 @@
       flex-direction: column;
       min-height: 0;
       height: calc(90vh - 86px);
-      padding: 18px 20px 20px;
+      padding: 22px clamp(28px, 3vw, 44px) 28px;
     }
 
     .timesheet-dialog .dialog-header {
       position: relative;
-      padding-right: 58px;
+      padding-left: clamp(28px, 3vw, 44px);
+      padding-right: clamp(76px, 6vw, 96px);
+      padding-top: 22px;
+      padding-bottom: 20px;
     }
 
     .timesheet-dialog #closeTimesheetDialogBtn,
@@ -1126,7 +1129,7 @@
       align-items: end;
       gap: 12px;
       flex-wrap: wrap;
-      margin-bottom: 8px;
+      margin-bottom: 12px;
     }
 
     .timesheet-toolbar .form-group {
@@ -1156,7 +1159,7 @@
     }
 
     .timesheet-help {
-      margin: 0 0 12px;
+      margin: 0 4px 16px;
       color: #68707d;
       font-size: 13px;
       line-height: 1.4;
@@ -1173,10 +1176,16 @@
 
     .timesheet-preview {
       min-width: 1080px;
-      padding: 18px;
+      padding: 24px 28px 28px;
       color: #20242b;
       background: #fff;
       font-family: Arial, Helvetica, sans-serif;
+    }
+
+    @media (max-width: 680px) {
+      .timesheet-dialog .dialog-body { padding: 18px 16px 20px; }
+      .timesheet-dialog .dialog-header { padding: 18px 58px 16px 20px; }
+      .timesheet-preview { padding: 18px 20px 22px; }
     }
 
     .timesheet-preview h3 {
@@ -1310,7 +1319,7 @@
   <path d="M36 32.5v7M32.5 36h7" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/>
 </svg></div>
         <div>
-          <h1>MyTaskAssistant <span class="version-badge">v3.5.5</span></h1>
+          <h1>MyTaskAssistant <span class="version-badge">v3.5.7</span></h1>
           <p>Personal task manager</p>
         </div>
       </div>

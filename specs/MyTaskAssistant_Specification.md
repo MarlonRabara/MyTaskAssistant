@@ -1,5 +1,5 @@
 # MyTaskAssistant Specification
-**Application Version:** v3.5.6  
+**Application Version:** v3.5.7  
 **Last Updated:** 2026-07-23
 
 ## Overview
@@ -799,3 +799,9 @@ This permits time spent on blocked, deferred, canceled, or otherwise interrupted
 - Selecting `Sub-Tasks` replaces the Task Detail content in the same editor window; it does not append child content below the detail form.
 - The Sub-Tasks tab lists only direct children as full-width task-style rows showing title, status, and Time Spent.
 - Selecting a Sub-Tasks row loads that child into the same task editor window.
+
+
+## v3.5.7 Timesheet and AI Analysis Dialog Spacing
+
+- Refined the Weekly Timesheet and AI Analysis dialog gutters, header alignment, helper-text spacing, and report-preview padding.
+- The dialogs retain usable table width and horizontal scrolling, with compact responsive spacing on smaller screens.
