@@ -1,5 +1,5 @@
 # MyTaskAssistant Specification
-**Application Version:** v3.5.3  
+**Application Version:** v3.5.4  
 **Last Updated:** 2026-07-23
 
 ## Overview
@@ -386,6 +386,7 @@ Available options:
 - Due Tomorrow
 - Due This Week
 - Due Next Week
+- Due Next Month
 
 ### Week Definition
 
@@ -398,6 +399,10 @@ Shows tasks with a due date from today through the final day of the current week
 ### Due Next Week
 
 Shows tasks due during the full calendar week immediately following the current week.
+
+### Due Next Month
+
+Shows tasks with a due date in the next calendar month, from the first day through the final day of that month. For example, when the current month is July, this filter includes tasks due from August 1 through August 31. This option is available only in the Due Date dropdown filter; it is not a left-panel navigation view.
 
 ### Past Due
 
@@ -767,3 +772,9 @@ This permits time spent on blocked, deferred, canceled, or otherwise interrupted
 - Parent AI Assistance is read-only and displayed as an Estimated Effort Without AI-weighted average of descendant AI Assistance percentages.
 - Parent task rows use the calculated Time Spent and AI Hours Saved values.
 - A parent cannot be completed until all descendant tasks are complete, regardless of whether completion is attempted from the row checkbox, the task editor, or a saved `Completed` status.
+
+
+## v3.5.4 Most Recent and Due Next Month Views
+
+- Added the `Most Recent` left-panel view. It shows the 10 tasks with the newest `createdAt` values, ordered newest first, after any active search, project, status, due-date, and hide-completed filters are applied. Its hover tooltip describes these criteria.
+- Added `Due Next Month` to the Due Date dropdown. It includes all tasks due during the next calendar month and is not a left-panel navigation view.

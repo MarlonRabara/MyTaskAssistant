@@ -1267,7 +1267,7 @@
   <path d="M36 32.5v7M32.5 36h7" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/>
 </svg></div>
         <div>
-          <h1>MyTaskAssistant <span class="version-badge">v3.5.2</span></h1>
+          <h1>MyTaskAssistant <span class="version-badge">v3.5.4</span></h1>
           <p>Personal task manager</p>
         </div>
       </div>
@@ -1277,6 +1277,7 @@
         <button type="button" id="navActiveBtn"><span>Active</span><span id="navActive">0</span></button>
         <button type="button" id="navCompletedBtn"><span>Completed</span><span id="navCompleted">0</span></button>
         <button type="button" id="navOverdueBtn"><span>Overdue</span><span id="navOverdue">0</span></button>
+        <button type="button" id="navMostRecentBtn" title="Shows the 10 tasks with the newest created dates, ordered from most recently created to least recently created."><span>Most Recent</span><span id="navMostRecent">0</span></button>
       </nav>
 
       <div class="file-card">
@@ -1348,6 +1349,7 @@
             <option value="tomorrow">Due Tomorrow</option>
             <option value="this-week">Due This Week</option>
             <option value="next-week">Due Next Week</option>
+            <option value="next-month">Due Next Month</option>
           </select>
           <label class="toggle">
             <input id="hideCompleted" type="checkbox" />
@@ -1843,6 +1845,27 @@
       return ordered;
     }
 
+    function taskDepth(task) {
+      let depth = 0;
+      let parentId = task.parentId;
+      const visited = new Set([task.id]);
+      while (parentId && !visited.has(parentId)) {
+        visited.add(parentId);
+        const parent = data.tasks.find(candidate => candidate.id === parentId);
+        if (!parent) break;
+        depth += 1;
+        parentId = parent.parentId;
+      }
+      return depth;
+    }
+
+    function mostRecentTasks(tasks) {
+      return tasks
+        .slice()
+        .sort((a, b) => String(b.createdAt || "").localeCompare(String(a.createdAt || "")) || String(b.id).localeCompare(String(a.id)))
+        .slice(0, 10);
+    }
+
     function childTasks(parentId) {
       return data.tasks.filter(task => task.parentId === parentId);
     }
@@ -1972,6 +1995,17 @@ Calculated AI Assistance: ${percentage}%`;
       return null;
     }
 
+    function isDueNextMonth(dueDate) {
+      if (!dueDate) return false;
+      const due = new Date(`${dueDate}T00:00:00`);
+      if (Number.isNaN(due.getTime())) return false;
+
+      const today = new Date();
+      const nextMonthStart = new Date(today.getFullYear(), today.getMonth() + 1, 1);
+      const followingMonthStart = new Date(today.getFullYear(), today.getMonth() + 2, 1);
+      return due >= nextMonthStart && due < followingMonthStart;
+    }
+
     function filteredTasks() {
       const q = $("searchInput").value.trim().toLowerCase();
       const status = $("statusFilter").value;
@@ -1995,6 +2029,7 @@ Calculated AI Assistance: ${percentage}%`;
         const weekRange = getWeekRange(task.dueDate);
         if (dueDateFilter === "this-week" && weekRange !== "this-week") return false;
         if (dueDateFilter === "next-week" && weekRange !== "next-week") return false;
+        if (dueDateFilter === "next-month" && !isDueNextMonth(task.dueDate)) return false;
 
         if (forcedView === "active" && isComplete(task)) return false;
         if (forcedView === "completed" && !isComplete(task)) return false;
@@ -2040,6 +2075,7 @@ Calculated AI Assistance: ${percentage}%`;
       $("navActive").textContent = active;
       $("navCompleted").textContent = completed;
       $("navOverdue").textContent = overdue;
+      $("navMostRecent").textContent = Math.min(total, 10);
     }
 
     function aiHoursSavedDetails(task) {
@@ -2094,7 +2130,9 @@ Calculated AI Assistance: ${percentage}%`;
     function renderTable() {
       updateSortIndicators();
       const tasks = filteredTasks();
-      const orderedEntries = orderedTaskTree(tasks);
+      const orderedEntries = forcedView === "most-recent"
+        ? mostRecentTasks(tasks).map(task => ({ task, depth: taskDepth(task) }))
+        : orderedTaskTree(tasks);
       if (!orderedEntries.length) {
         $("taskRows").innerHTML = '<tr><td colspan="12"><div class="empty">No tasks match the current filters.</div></td></tr>';
         return;
@@ -2312,7 +2350,7 @@ Calculated AI Assistance: ${percentage}%`;
         ...(data.metadata || {}),
         application: "MyTaskAssistant",
         schemaVersion: "1.0",
-        applicationVersion: "v3.5.2",
+        applicationVersion: "v3.5.4",
         updatedAt: new Date().toISOString()
       };
       const writable = await fileHandle.createWritable();
@@ -2350,7 +2388,7 @@ Calculated AI Assistance: ${percentage}%`;
       const payload = {
         exportType: "current-view",
         exportedAt: new Date().toISOString(),
-        applicationVersion: "v3.5.2",
+        applicationVersion: "v3.5.4",
         filters: currentFilterSnapshot(),
         taskCount: visibleTasks.length,
         projects: data.projects.filter(project => referencedProjectIds.includes(project.id)),
@@ -3113,7 +3151,8 @@ Calculated AI Assistance: ${percentage}%`;
       const map = {
         active: $("navActiveBtn"),
         completed: $("navCompletedBtn"),
-        overdue: $("navOverdueBtn")
+        overdue: $("navOverdueBtn"),
+        "most-recent": $("navMostRecentBtn")
       };
       (map[view] || document.querySelector(".nav button")).classList.add("active");
       renderTable();
@@ -3172,6 +3211,7 @@ Calculated AI Assistance: ${percentage}%`;
     $("navActiveBtn").addEventListener("click", () => setView("active"));
     $("navCompletedBtn").addEventListener("click", () => setView("completed"));
     $("navOverdueBtn").addEventListener("click", () => setView("overdue"));
+    $("navMostRecentBtn").addEventListener("click", () => setView("most-recent"));
     document.querySelector(".nav button").addEventListener("click", () => setView("all"));
 
     normalizePriorityOrders();
