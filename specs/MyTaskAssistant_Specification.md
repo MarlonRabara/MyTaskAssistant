@@ -1,5 +1,5 @@
 # MyTaskAssistant Specification
-**Application Version:** v3.5.8  
+**Application Version:** v3.5.11  
 **Last Updated:** 2026-07-23
 
 ## Overview
@@ -812,3 +812,22 @@ This permits time spent on blocked, deferred, canceled, or otherwise interrupted
 - Task-row Notes display up to five lines of text.
 - When a note exceeds five lines, a bold `...(see more)` action appears after the preview. Selecting it opens that task in the task editor.
 - The task editor Notes field provides an Expand Notes / Collapse Notes control so longer notes can be read and edited with a larger text area.
+
+
+## v3.5.9 Completion Status and Progress Synchronization
+
+- Setting task progress to `100%` automatically sets status to `Completed`.
+- Setting status to `Completed` automatically sets task progress to `100%`.
+- Save validation prevents an inconsistent completed state: a task cannot be persisted as `Completed` below 100% progress, and a task at 100% progress cannot be persisted with a non-Completed status.
+
+
+## v3.5.10 Top Toolbar Labels and Tooltips
+
+- Renamed the `Open JSON` toolbar action to `Load Tasks` to use task-focused, non-technical language.
+- Every top-toolbar action provides a tooltip describing its behavior: Load Tasks, Export View, Weekly Timesheet, AI Analysis, Export Active, Save, Projects, and Add Task.
+
+
+## v3.5.11 Not Started Progress Validation
+
+- Save validation prevents a task from retaining `Not Started` status when Percent Complete is greater than `0%`.
+- The user must select an appropriate active status before saving progress greater than zero.

@@ -1,6 +1,6 @@
 # MyTaskAssistant
 
-**Version:** v3.5.8
+**Version:** v3.5.11
 
 A local-first, single-file task manager for organizing projects, tracking effort, monitoring AI-assisted productivity, and producing weekly HTML timesheets. No installation, no backend, no database, no account — just open one HTML file in a modern browser.
 
@@ -8,7 +8,7 @@ A local-first, single-file task manager for organizing projects, tracking effort
 
 1. Clone or download this repository.
 2. Double-click `MyTaskAssistant.html` (or open it in Chrome, Edge, or another modern desktop browser).
-3. Click **+ Add Task** to start, or **Open JSON** to load an existing data file.
+3. Click **+ Add Task** to start, or **Load Tasks** to load an existing saved task file.
 4. Click **Save** to persist your tasks to a local JSON file. The browser may ask for permission to read/write the file — this is expected for local file handling.
 
 > Tip: A Chromium-based browser (Chrome/Edge) is recommended for the best save experience via the File System Access API.
@@ -16,6 +16,7 @@ A local-first, single-file task manager for organizing projects, tracking effort
 ## Key Features
 
 - **Projects and tasks** — organize tasks by project, with subtasks, parent/child relationships, cloning, statuses, priorities, and due dates.
+- **Clear top actions** — use **Load Tasks** to open a saved task file. Every top-toolbar action includes a hover tooltip that explains what it does.
 - **Parent task rollups** — parent Estimated Hours, Time Spent, and Estimated Effort Without AI are read-only sums of all child and nested-child tasks. Parent AI Assistance is a read-only Estimated Effort Without AI-weighted average. A parent cannot be completed until every child and nested child is complete.
 - **Filters and views** — search, project/status/due-date filters (including Due Last Week and Due Next Month), Active/Completed/Overdue navigation, a Most Recent view, and hide-completed toggle.
 - **Most Recent** — a left-panel view showing up to 10 tasks with the newest creation dates, newest first, after active filters are applied. Hover over it in the app to see the filtering criteria.
@@ -23,6 +24,8 @@ A local-first, single-file task manager for organizing projects, tracking effort
 - **Due Last Week** — a Due Date dropdown option that shows tasks due in the complete Sunday-through-Saturday week before the current week.
 - **Sub-Tasks tab** — when editing a saved parent task, select **Sub-Tasks** beside **Task Detail** to replace the detail form with full-width rows for direct child tasks. Each row shows title, status, and Time Spent; select a row to load that child into the same task editor window.
 - **Completion validation** — completing a task requires both Estimated Hours and Time Spent to be greater than zero, and applies the same AI productivity validation used when saving a task.
+- **Completion synchronization** — setting progress to 100% automatically sets Status to Completed; setting Status to Completed automatically sets progress to 100%. Saving prevents either value from being inconsistent with the other.
+- **Progress validation** — a task with progress greater than 0% cannot be saved with a Not Started status; select an active status before recording progress.
 - **Notes** — task rows preview up to five note lines. A bold **...(see more)** link appears for longer notes and opens the task editor; the editor provides an Expand Notes control for comfortable long-note reading and editing.
 - **Time and AI productivity tracking** — per task, capture:
   - `estimatedHours` — your original estimate

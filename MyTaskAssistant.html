@@ -1347,7 +1347,7 @@
   <path d="M36 32.5v7M32.5 36h7" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/>
 </svg></div>
         <div>
-          <h1>MyTaskAssistant <span class="version-badge">v3.5.8</span></h1>
+          <h1>MyTaskAssistant <span class="version-badge">v3.5.10</span></h1>
           <p>Personal task manager</p>
         </div>
       </div>
@@ -1373,14 +1373,14 @@
           <p>Plan, track, and export your personal work.</p>
         </div>
         <div class="top-actions">
-          <button class="btn btn-secondary" id="openBtn" type="button">Open JSON</button>
-          <button class="btn btn-secondary" id="exportViewBtn" type="button" title="Export only the tasks shown by the current filters">Export View</button>
-          <button class="btn btn-secondary" id="timesheetExportBtn" type="button" title="Create a weekly HTML timesheet">Weekly Timesheet</button>
-          <button class="btn btn-secondary" id="aiAnalysisBtn" type="button" title="Review weekly AI hours saved">🤖 AI Analysis</button>
-          <button class="btn btn-secondary" id="exportBtn" type="button" title="Export all incomplete tasks">Export Active</button>
-          <button class="btn btn-secondary" id="saveBtn" type="button">Save</button>
-          <button class="btn btn-secondary" id="manageProjectsBtn" type="button">Projects</button>
-          <button class="btn btn-primary" id="addBtn" type="button">+ Add Task</button>
+          <button class="btn btn-secondary" id="openBtn" type="button" title="Load projects and tasks from a saved MyTaskAssistant file on your computer.">Load Tasks</button>
+          <button class="btn btn-secondary" id="exportViewBtn" type="button" title="Download a JSON copy containing only the tasks currently shown after all active filters are applied.">Export View</button>
+          <button class="btn btn-secondary" id="timesheetExportBtn" type="button" title="Choose a week, review daily hour allocation, and download a standalone HTML timesheet.">Weekly Timesheet</button>
+          <button class="btn btn-secondary" id="aiAnalysisBtn" type="button" title="Review weekly AI Hours Saved for eligible AI-assisted tasks and download the analysis as HTML.">🤖 AI Analysis</button>
+          <button class="btn btn-secondary" id="exportBtn" type="button" title="Download a JSON copy of every task that is not yet completed, regardless of the current filters.">Export Active</button>
+          <button class="btn btn-secondary" id="saveBtn" type="button" title="Save all current projects and tasks back to the loaded task file, or choose a new file if none is loaded.">Save</button>
+          <button class="btn btn-secondary" id="manageProjectsBtn" type="button" title="Create, edit, or delete the projects used to organize tasks.">Projects</button>
+          <button class="btn btn-primary" id="addBtn" type="button" title="Create a new task and enter its details, work estimates, status, and relationships.">+ Add Task</button>
         </div>
       </div>
 
@@ -2062,6 +2062,16 @@ Calculated AI Assistance: ${percentage}%`;
         return false;
       }
       return true;
+    }
+
+    function synchronizeCompletionFields(source) {
+      if (source === "status" && $("taskStatusInput").value === "Completed") {
+        $("taskProgressInput").value = 100;
+      }
+      if (source === "progress" && Number($("taskProgressInput").value || 0) >= 100) {
+        $("taskProgressInput").value = 100;
+        $("taskStatusInput").value = "Completed";
+      }
     }
 
     function moveTaskWithinLevel(draggedId, targetId) {
@@ -2831,7 +2841,20 @@ Calculated AI Assistance: ${percentage}%`;
       const rollup = existing ? taskRollup(existing) : null;
       const hasChildTasks = Boolean(rollup);
 
-      if (existing && ($("taskStatusInput").value === "Completed" || Number($("taskProgressInput").value || 0) >= 100) && !canCompleteTask(existing)) return;
+      synchronizeCompletionFields("status");
+      synchronizeCompletionFields("progress");
+
+      const statusIsCompleted = $("taskStatusInput").value === "Completed";
+      const progressIsComplete = Number($("taskProgressInput").value || 0) >= 100;
+      if ($("taskStatusInput").value === "Not Started" && Number($("taskProgressInput").value || 0) > 0) {
+        alert("A task with progress greater than 0% cannot have a Not Started status.");
+        return;
+      }
+      if (statusIsCompleted !== progressIsComplete) {
+        alert("Completed tasks must have 100% progress, and tasks at 100% progress must have a Completed status.");
+        return;
+      }
+      if (existing && statusIsCompleted && !canCompleteTask(existing)) return;
 
       const aiAssistanceValue = Math.max(0, Math.min(100, Number($("percentageOfAIAssistanceInput").value || 0)));
       const effortWithoutAIRaw = $("estimatedEffortWithoutAIInput").value;
@@ -2839,7 +2862,7 @@ Calculated AI Assistance: ${percentage}%`;
       const timeSpentValue = Math.max(0, Number($("taskHoursInput").value || 0));
       const estimatedHoursRaw = $("estimatedHoursInput").value;
       const estimatedHoursValue = estimatedHoursRaw === "" ? null : Math.max(0, Number(estimatedHoursRaw));
-      const completingTask = $("taskStatusInput").value === "Completed" || Number($("taskProgressInput").value || 0) >= 100;
+      const completingTask = statusIsCompleted;
 
       const completionEstimatedHours = hasChildTasks ? rollup.estimatedHours : estimatedHoursValue;
       const completionTimeSpent = hasChildTasks ? rollup.timeSpent : timeSpentValue;
@@ -2872,7 +2895,10 @@ Calculated AI Assistance: ${percentage}%`;
         updatedAt: new Date().toISOString()
       });
 
-      if (task.status === "Completed") task.percentComplete = 100;
+      if ((task.status === "Completed") !== (task.percentComplete === 100)) {
+        alert("Completed tasks must have 100% progress, and tasks at 100% progress must have a Completed status.");
+        return;
+      }
 
       if (existing) {
         Object.assign(existing, task);
@@ -2980,6 +3006,8 @@ Calculated AI Assistance: ${percentage}%`;
         date.setDate(start.getDate() + index);
         return date;
       });
+    $("taskStatusInput").addEventListener("change", () => synchronizeCompletionFields("status"));
+    $("taskProgressInput").addEventListener("change", () => synchronizeCompletionFields("progress"));
     }
 
     function dateInsideWeek(value, days) {

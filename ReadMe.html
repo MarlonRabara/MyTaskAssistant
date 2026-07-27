@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>MyTaskAssistant v3.5.8 – User Guide</title>
+  <title>MyTaskAssistant v3.5.11 – User Guide</title>
   <style>
     :root {
       --bg: #eef2f7;
@@ -403,7 +403,7 @@
             monitoring AI-assisted productivity, and producing weekly HTML timesheets.
           </p>
         </div>
-        <div class="version">v3.5.8</div>
+        <div class="version">v3.5.11</div>
       </div>
 
       <div class="hero-grid">
@@ -479,8 +479,8 @@
               Double-click <code>MyTaskAssistant.html</code>. It should open in your default browser.
             </div>
             <div class="step">
-              <strong>Open an existing JSON file</strong>
-              Select <b>Open JSON</b>, choose your task file, and confirm that your projects and tasks appear.
+              <strong>Load an existing task file</strong>
+              Select <b>Load Tasks</b>, choose your saved task file, and confirm that your projects and tasks appear.
             </div>
             <div class="step">
               <strong>Or begin with a new task list</strong>
@@ -505,7 +505,7 @@
             </div>
             <div class="card">
               <h3>Top actions</h3>
-              <p>Open, save, export, manage projects, create weekly timesheets, and add tasks.</p>
+              <p>Load tasks, save, export, manage projects, create weekly timesheets, and add tasks. Hover over any top action for a description of how it works.</p>
             </div>
             <div class="card">
               <h3>Task grid</h3>
@@ -592,6 +592,12 @@
             A task is treated as complete when its status is <b>Completed</b> or its progress reaches 100%.
              Estimated Hours and Time Spent must both be greater than zero before any task can be marked complete. Completion also applies the same AI productivity validation used when saving. A parent task cannot be marked complete until all child and nested-child tasks are complete. These rules apply to the checkbox, the task editor's Mark Complete actions, and saving a Completed status or 100% progress. The task editor provides both upper and lower action buttons for convenience.
           </p>
+           <p>
+             Status and progress stay synchronized: setting progress to <b>100%</b> automatically sets Status to <b>Completed</b>, and setting Status to <b>Completed</b> automatically sets progress to <b>100%</b>. Saving does not permit a mismatched completed state.
+           </p>
+           <p>
+             A task with progress greater than <b>0%</b> cannot be saved with Status set to <b>Not Started</b>. Select an active status before recording progress.
+           </p>
         </section>
 
         <section id="filters">
@@ -923,7 +929,7 @@
     </div>
 
     <footer class="footer">
-      MyTaskAssistant v3.5.8 · Standalone local-first application guide · Generated for distribution with the application package
+      MyTaskAssistant v3.5.11 · Standalone local-first application guide · Generated for distribution with the application package
     </footer>
   </div>
 </body>
