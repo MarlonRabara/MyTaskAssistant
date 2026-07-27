@@ -922,6 +922,49 @@
 
     .dialog-head h3 { margin: 0; }
 
+    .task-editor-tabs {
+      display: flex;
+      gap: 4px;
+      padding: 12px 20px 0;
+      border-bottom: 1px solid var(--line);
+    }
+
+    .task-editor-tab {
+      border: 0;
+      border-bottom: 2px solid transparent;
+      padding: 8px 12px;
+      background: transparent;
+      color: var(--muted);
+      font: inherit;
+      font-weight: 700;
+      cursor: pointer;
+    }
+
+    .task-editor-tab.active { color: var(--accent); border-bottom-color: var(--accent); }
+    .task-editor-panel[hidden] { display: none !important; }
+    #taskDialog .dialog-body { display: block; }
+    .task-editor-panel {
+      min-width: 0;
+    }
+    #taskDetailPanel {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 16px;
+    }
+    #taskDetailPanel .form-group.full { grid-column: 1 / -1; }
+    .subtask-list { display: grid; gap: 8px; }
+    .subtask-list button {
+      width: 100%;
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      gap: 12px;
+      align-items: center;
+      padding: 12px 14px;
+      text-align: left;
+    }
+    .subtask-list button:hover { border-color: var(--accent); }
+    .subtask-row-meta { color: var(--muted); font-size: 12px; text-align: right; }
+
     .dialog-head-actions {
       display: flex;
       align-items: center;
@@ -1267,7 +1310,7 @@
   <path d="M36 32.5v7M32.5 36h7" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/>
 </svg></div>
         <div>
-          <h1>MyTaskAssistant <span class="version-badge">v3.5.4</span></h1>
+          <h1>MyTaskAssistant <span class="version-badge">v3.5.5</span></h1>
           <p>Personal task manager</p>
         </div>
       </div>
@@ -1345,6 +1388,7 @@
           <select class="select" id="dueDateFilter" aria-label="Filter by due date">
             <option value="all">All due dates</option>
             <option value="past-due">Past Due</option>
+            <option value="last-week">Due Last Week</option>
             <option value="today">Due Today</option>
             <option value="tomorrow">Due Tomorrow</option>
             <option value="this-week">Due This Week</option>
@@ -1447,7 +1491,12 @@
         </button>
       </div>
     </div>
+      <div class="task-editor-tabs" role="tablist" aria-label="Task editor sections">
+        <button class="task-editor-tab active" id="taskDetailTab" type="button" role="tab" aria-selected="true">Task Detail</button>
+        <button class="task-editor-tab" id="subTasksTab" type="button" role="tab" aria-selected="false">Sub-Tasks</button>
+      </div>
     <div class="dialog-body">
+        <div class="task-editor-panel" id="taskDetailPanel" role="tabpanel">
       <input id="taskIdInput" type="hidden" />
       <div class="form-group full">
         <label for="taskTitleInput">Task title</label>
@@ -1525,6 +1574,10 @@
         <label for="taskNotesInput">Notes</label>
         <textarea id="taskNotesInput"></textarea>
       </div>
+        </div>
+        <div class="task-editor-panel" id="subTasksPanel" role="tabpanel" hidden>
+          <div id="subTasksList" class="subtask-list"></div>
+        </div>
     </div>
     <div class="dialog-foot">
       <button class="btn btn-secondary" id="markCompleteBtn" type="button">Mark Complete</button>
@@ -1938,6 +1991,25 @@ Calculated AI Assistance: ${percentage}%`;
       return false;
     }
 
+    function validateTaskCompletion(task) {
+      if (!canCompleteTask(task)) return false;
+      const values = taskValuesForDisplay(task);
+      const estimatedHours = Number(values.estimatedHours || 0);
+      const timeSpent = Number(values.timeSpent || 0);
+      const aiAssistance = Number(values.aiAssistancePercentage || 0);
+      const effortWithoutAI = values.estimatedEffortWithoutAI;
+
+      if (!(estimatedHours > 0) || !(timeSpent > 0)) {
+        alert("Estimated Hours and Time Spent must both be greater than zero before a task can be marked complete.");
+        return false;
+      }
+      if (aiAssistance > 0 && (effortWithoutAI === null || effortWithoutAI === undefined || !(Number(effortWithoutAI) > timeSpent))) {
+        alert("Estimated Effort Without AI must be greater than Time Spent whenever AI Assistance is greater than 0%.\n\nAI Assistance represents measurable productivity gains.");
+        return false;
+      }
+      return true;
+    }
+
     function moveTaskWithinLevel(draggedId, targetId) {
       if (draggedId === targetId) return;
       const dragged = data.tasks.find(task => task.id === draggedId);
@@ -2006,6 +2078,19 @@ Calculated AI Assistance: ${percentage}%`;
       return due >= nextMonthStart && due < followingMonthStart;
     }
 
+    function isDueLastWeek(dueDate) {
+      if (!dueDate) return false;
+      const due = new Date(`${dueDate}T00:00:00`);
+      if (Number.isNaN(due.getTime())) return false;
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      const thisWeekStart = new Date(today);
+      thisWeekStart.setDate(today.getDate() - today.getDay());
+      const lastWeekStart = new Date(thisWeekStart);
+      lastWeekStart.setDate(thisWeekStart.getDate() - 7);
+      return due >= lastWeekStart && due < thisWeekStart;
+    }
+
     function filteredTasks() {
       const q = $("searchInput").value.trim().toLowerCase();
       const status = $("statusFilter").value;
@@ -2023,6 +2108,7 @@ Calculated AI Assistance: ${percentage}%`;
 
         const dueDays = daysRemaining(task.dueDate);
         if (dueDateFilter === "past-due" && !(dueDays !== null && dueDays < 0 && !isComplete(task))) return false;
+        if (dueDateFilter === "last-week" && !isDueLastWeek(task.dueDate)) return false;
         if (dueDateFilter === "today" && dueDays !== 0) return false;
         if (dueDateFilter === "tomorrow" && dueDays !== 1) return false;
 
@@ -2237,7 +2323,7 @@ Calculated AI Assistance: ${percentage}%`;
         box.addEventListener("change", () => {
           const task = data.tasks.find(t => t.id === box.dataset.completeId);
           if (!task) return;
-          if (box.checked && !canCompleteTask(task)) {
+          if (box.checked && !validateTaskCompletion(task)) {
             box.checked = false;
             return;
           }
@@ -2489,6 +2575,8 @@ Calculated AI Assistance: ${percentage}%`;
       $("taskParentSearch").value = "";
       $("taskDependencySearch").value = "";
       $("taskNotesInput").value = task?.notes ?? "";
+      showTaskEditorTab("detail");
+      renderSubTasks(task);
       renderSelectedParent();
       renderSelectedDependencies();
       closeTypeaheadResults();
@@ -2496,6 +2584,33 @@ Calculated AI Assistance: ${percentage}%`;
       $("markCompleteBtn").style.display = showMarkComplete ? "inline-flex" : "none";
       $("markCompleteTopBtn").style.display = showMarkComplete ? "inline-flex" : "none";
       $("taskDialog").showModal();
+    }
+
+    function showTaskEditorTab(tab) {
+      const showingDetails = tab === "detail";
+      $("taskDetailTab").classList.toggle("active", showingDetails);
+      $("subTasksTab").classList.toggle("active", !showingDetails);
+      $("taskDetailTab").setAttribute("aria-selected", String(showingDetails));
+      $("subTasksTab").setAttribute("aria-selected", String(!showingDetails));
+      $("taskDetailPanel").hidden = !showingDetails;
+      $("subTasksPanel").hidden = showingDetails;
+    }
+
+    function renderSubTasks(task) {
+      const children = task ? childTasks(task.id) : [];
+      $("subTasksTab").disabled = !task;
+      $("subTasksList").innerHTML = !task
+        ? '<div class="empty">Save this task before adding or viewing sub-tasks.</div>'
+        : !children.length
+          ? '<div class="empty">This task has no direct sub-tasks.</div>'
+          : children.map(child => `
+              <button class="btn btn-secondary" type="button" data-subtask-edit-id="${escapeHtml(child.id)}" aria-label="Open sub-task ${escapeHtml(child.title)}">
+                <strong>${escapeHtml(child.title)}</strong>
+                <span class="subtask-row-meta">${escapeHtml(child.status)} · ${escapeHtml(formatHours(child.timeSpent))}</span>
+              </button>`).join("");
+      $("subTasksList").querySelectorAll("[data-subtask-edit-id]").forEach(button => {
+        button.addEventListener("click", () => openTaskDialog(button.dataset.subtaskEditId));
+      });
     }
 
 
@@ -2616,11 +2731,7 @@ Calculated AI Assistance: ${percentage}%`;
           if (!canCompleteTask(task)) return;
           $("taskStatusInput").value = "Completed";
           $("taskProgressInput").value = 100;
-          task.status = "Completed";
-          task.percentComplete = 100;
-          task.updatedAt = new Date().toISOString();
-          $("taskDialog").close();
-          render();
+          saveTaskFromDialog();
         }
       }
     }
@@ -2661,12 +2772,22 @@ Calculated AI Assistance: ${percentage}%`;
       const rollup = existing ? taskRollup(existing) : null;
       const hasChildTasks = Boolean(rollup);
 
-      if (existing && $("taskStatusInput").value === "Completed" && !canCompleteTask(existing)) return;
+      if (existing && ($("taskStatusInput").value === "Completed" || Number($("taskProgressInput").value || 0) >= 100) && !canCompleteTask(existing)) return;
 
       const aiAssistanceValue = Math.max(0, Math.min(100, Number($("percentageOfAIAssistanceInput").value || 0)));
       const effortWithoutAIRaw = $("estimatedEffortWithoutAIInput").value;
       const effortWithoutAIValue = effortWithoutAIRaw === "" ? null : Math.max(0, Number(effortWithoutAIRaw));
       const timeSpentValue = Math.max(0, Number($("taskHoursInput").value || 0));
+      const estimatedHoursRaw = $("estimatedHoursInput").value;
+      const estimatedHoursValue = estimatedHoursRaw === "" ? null : Math.max(0, Number(estimatedHoursRaw));
+      const completingTask = $("taskStatusInput").value === "Completed" || Number($("taskProgressInput").value || 0) >= 100;
+
+      const completionEstimatedHours = hasChildTasks ? rollup.estimatedHours : estimatedHoursValue;
+      const completionTimeSpent = hasChildTasks ? rollup.timeSpent : timeSpentValue;
+      if (completingTask && (!(completionEstimatedHours > 0) || !(completionTimeSpent > 0))) {
+        alert("Estimated Hours and Time Spent must both be greater than zero before a task can be marked complete.");
+        return;
+      }
 
       if (aiAssistanceValue > 0 && (effortWithoutAIValue === null || !(effortWithoutAIValue > timeSpentValue))) {
         alert("Estimated Effort Without AI must be greater than Time Spent whenever AI Assistance is greater than 0%.\n\nAI Assistance represents measurable productivity gains.");
@@ -2680,7 +2801,7 @@ Calculated AI Assistance: ${percentage}%`;
         projectId: $("taskProjectInput").value,
         status: $("taskStatusInput").value,
         percentComplete: Number($("taskProgressInput").value || 0),
-        estimatedHours: hasChildTasks ? existing.estimatedHours : ($("estimatedHoursInput").value === "" ? null : Math.max(0, Number($("estimatedHoursInput").value))),
+        estimatedHours: hasChildTasks ? existing.estimatedHours : estimatedHoursValue,
         timeSpent: hasChildTasks ? existing.timeSpent : timeSpentValue,
         estimatedEffortWithoutAI: hasChildTasks ? existing.estimatedEffortWithoutAI : effortWithoutAIValue,
         aiAssistancePercentage: aiAssistanceValue,
@@ -3193,6 +3314,8 @@ Calculated AI Assistance: ${percentage}%`;
     $("saveTaskTopBtn").addEventListener("click", saveTaskFromDialog);
     $("markCompleteBtn").addEventListener("click", markTaskCompleteInDialog);
     $("markCompleteTopBtn").addEventListener("click", markTaskCompleteInDialog);
+    $("taskDetailTab").addEventListener("click", () => showTaskEditorTab("detail"));
+    $("subTasksTab").addEventListener("click", () => showTaskEditorTab("subtasks"));
     $("taskParentSearch").addEventListener("input", renderParentResults);
     $("taskParentSearch").addEventListener("focus", renderParentResults);
     $("taskDependencySearch").addEventListener("input", renderDependencyResults);

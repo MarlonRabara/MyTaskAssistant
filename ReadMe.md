@@ -1,6 +1,6 @@
 # MyTaskAssistant
 
-**Version:** v3.5.4
+**Version:** v3.5.6
 
 A local-first, single-file task manager for organizing projects, tracking effort, monitoring AI-assisted productivity, and producing weekly HTML timesheets. No installation, no backend, no database, no account — just open one HTML file in a modern browser.
 
@@ -17,9 +17,12 @@ A local-first, single-file task manager for organizing projects, tracking effort
 
 - **Projects and tasks** — organize tasks by project, with subtasks, parent/child relationships, cloning, statuses, priorities, and due dates.
 - **Parent task rollups** — parent Estimated Hours, Time Spent, and Estimated Effort Without AI are read-only sums of all child and nested-child tasks. Parent AI Assistance is a read-only Estimated Effort Without AI-weighted average. A parent cannot be completed until every child and nested child is complete.
-- **Filters and views** — search, project/status/due-date filters (including Due Next Month), Active/Completed/Overdue navigation, a Most Recent view, and hide-completed toggle.
+- **Filters and views** — search, project/status/due-date filters (including Due Last Week and Due Next Month), Active/Completed/Overdue navigation, a Most Recent view, and hide-completed toggle.
 - **Most Recent** — a left-panel view showing up to 10 tasks with the newest creation dates, newest first, after active filters are applied. Hover over it in the app to see the filtering criteria.
 - **Due Next Month** — a Due Date dropdown option that shows tasks due in the next calendar month. It is not a left-panel navigation view.
+- **Due Last Week** — a Due Date dropdown option that shows tasks due in the complete Sunday-through-Saturday week before the current week.
+- **Sub-Tasks tab** — when editing a saved parent task, select **Sub-Tasks** beside **Task Detail** to replace the detail form with full-width rows for direct child tasks. Each row shows title, status, and Time Spent; select a row to load that child into the same task editor window.
+- **Completion validation** — completing a task requires both Estimated Hours and Time Spent to be greater than zero, and applies the same AI productivity validation used when saving a task.
 - **Time and AI productivity tracking** — per task, capture:
   - `estimatedHours` — your original estimate
   - `timeSpent` — actual hours worked

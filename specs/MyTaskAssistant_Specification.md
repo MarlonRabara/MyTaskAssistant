@@ -1,5 +1,5 @@
 # MyTaskAssistant Specification
-**Application Version:** v3.5.4  
+**Application Version:** v3.5.6  
 **Last Updated:** 2026-07-23
 
 ## Overview
@@ -382,6 +382,7 @@ Available options:
 
 - All Due Dates
 - Past Due
+- Due Last Week
 - Due Today
 - Due Tomorrow
 - Due This Week
@@ -399,6 +400,10 @@ Shows tasks with a due date from today through the final day of the current week
 ### Due Next Week
 
 Shows tasks due during the full calendar week immediately following the current week.
+
+### Due Last Week
+
+Shows tasks due during the complete Sunday-through-Saturday calendar week immediately before the current week. This filter includes completed and incomplete tasks, subject to any other active filters.
 
 ### Due Next Month
 
@@ -778,3 +783,19 @@ This permits time spent on blocked, deferred, canceled, or otherwise interrupted
 
 - Added the `Most Recent` left-panel view. It shows the 10 tasks with the newest `createdAt` values, ordered newest first, after any active search, project, status, due-date, and hide-completed filters are applied. Its hover tooltip describes these criteria.
 - Added `Due Next Month` to the Due Date dropdown. It includes all tasks due during the next calendar month and is not a left-panel navigation view.
+
+
+## v3.5.5 Due Last Week, Sub-Tasks Tab, and Completion Validation
+
+- Added `Due Last Week` to the Due Date dropdown. It includes tasks due in the full Sunday-through-Saturday week immediately before the current week.
+- The task editor provides `Task Detail` and `Sub-Tasks` tabs. The Sub-Tasks tab lists direct child tasks. Selecting a child opens that child in the task editor.
+- Mark Complete now uses the same editor validations as Save Task, including AI productivity validation.
+- A task cannot be completed unless both Estimated Hours and Time Spent are greater than zero. This rule applies to task-editor completion actions, saving a Completed status or 100% progress, and the task-row completion checkbox.
+
+
+## v3.5.6 Sub-Tasks Tab Interaction Refinement
+
+- The task editor opens on the `Task Detail` tab, which retains the full-width, two-column detail layout.
+- Selecting `Sub-Tasks` replaces the Task Detail content in the same editor window; it does not append child content below the detail form.
+- The Sub-Tasks tab lists only direct children as full-width task-style rows showing title, status, and Time Spent.
+- Selecting a Sub-Tasks row loads that child into the same task editor window.

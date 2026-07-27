@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>MyTaskAssistant v3.5.4 – User Guide</title>
+  <title>MyTaskAssistant v3.5.6 – User Guide</title>
   <style>
     :root {
       --bg: #eef2f7;
@@ -403,7 +403,7 @@
             monitoring AI-assisted productivity, and producing weekly HTML timesheets.
           </p>
         </div>
-        <div class="version">v3.5.4</div>
+        <div class="version">v3.5.6</div>
       </div>
 
       <div class="hero-grid">
@@ -516,7 +516,7 @@
           <table>
             <thead><tr><th>Action</th><th>What it does</th></tr></thead>
             <tbody>
-              <tr><td>Complete checkbox</td><td>Marks a task completed and sets progress to 100%. Parent tasks can be completed only after all child and nested-child tasks are completed.</td></tr>
+              <tr><td>Complete checkbox</td><td>Marks a task completed and sets progress to 100%. Completion requires Estimated Hours and Time Spent greater than zero and follows the same AI validation as saving. Parent tasks also require all child and nested-child tasks to be completed.</td></tr>
               <tr><td>Clone</td><td>Creates a copy of the selected task for reuse.</td></tr>
               <tr><td>Create child task</td><td>Adds a subtask beneath the selected parent task.</td></tr>
               <tr><td>Edit</td><td>Opens the full task editor.</td></tr>
@@ -564,6 +564,9 @@
             A child task belongs beneath a parent task. Use the child-task icon on a row or select a parent in the task editor.
             Reordering is limited to tasks at the same hierarchy level.
           </p>
+           <p>
+             The task editor opens on <b>Task Detail</b>, which uses the full-width two-column form. For a saved parent task, select the adjacent <b>Sub-Tasks</b> tab to replace the detail form with full-width rows for direct child tasks. Each row shows the child title, status, and Time Spent; select a row to load that child into the same task editor window.
+           </p>
 
            <h3>Parent task rollups</h3>
            <p>
@@ -582,7 +585,7 @@
           <h3>Completion</h3>
           <p>
             A task is treated as complete when its status is <b>Completed</b> or its progress reaches 100%.
-             A parent task cannot be marked complete until all child and nested-child tasks are complete. This rule applies to the checkbox, the task editor's Mark Complete actions, and saving a Completed status. The task editor provides both upper and lower action buttons for convenience.
+             Estimated Hours and Time Spent must both be greater than zero before any task can be marked complete. Completion also applies the same AI productivity validation used when saving. A parent task cannot be marked complete until all child and nested-child tasks are complete. These rules apply to the checkbox, the task editor's Mark Complete actions, and saving a Completed status or 100% progress. The task editor provides both upper and lower action buttons for convenience.
           </p>
         </section>
 
@@ -604,7 +607,7 @@
             </div>
             <div class="card">
               <h3>Due date</h3>
-              <p>Supports Past Due, Today, Tomorrow, This Week, Next Week, and Due Next Month.</p>
+              <p>Supports Past Due, Due Last Week, Today, Tomorrow, This Week, Next Week, and Due Next Month.</p>
             </div>
           </div>
           <div class="callout">
@@ -617,6 +620,9 @@
           </p>
           <div class="callout">
             <b>Due Next Month</b> is available in the Due Date dropdown. It includes tasks due from the first through the final day of the next calendar month; it is not a left-navigation view.
+          </div>
+          <div class="callout">
+            <b>Due Last Week</b> is available in the Due Date dropdown. It includes tasks due in the complete Sunday-through-Saturday calendar week before the current week.
           </div>
         </section>
 
@@ -912,7 +918,7 @@
     </div>
 
     <footer class="footer">
-      MyTaskAssistant v3.5.4 · Standalone local-first application guide · Generated for distribution with the application package
+      MyTaskAssistant v3.5.6 · Standalone local-first application guide · Generated for distribution with the application package
     </footer>
   </div>
 </body>
