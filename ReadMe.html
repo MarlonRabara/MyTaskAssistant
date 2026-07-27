@@ -1,0 +1,867 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>MyTaskAssistant v3.4 – User Guide</title>
+  <style>
+    :root {
+      --bg: #eef2f7;
+      --surface: #ffffff;
+      --surface-soft: #f7f9fc;
+      --border: #d9e0ea;
+      --text: #1f2937;
+      --muted: #637083;
+      --accent: #4f46e5;
+      --accent-soft: #eef0ff;
+      --success: #087f5b;
+      --warning: #a15c00;
+      --danger: #b42318;
+      --shadow: 0 16px 48px rgba(31, 41, 55, .10);
+      --radius: 14px;
+    }
+
+    * { box-sizing: border-box; }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--text);
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      line-height: 1.6;
+    }
+
+    a { color: var(--accent); }
+
+    code, pre {
+      font-family: "SFMono-Regular", Consolas, "Liberation Mono", monospace;
+    }
+
+    .page {
+      width: min(1280px, calc(100% - 32px));
+      margin: 24px auto 56px;
+    }
+
+    .hero {
+      padding: 34px;
+      border-radius: 20px;
+      background:
+        radial-gradient(circle at top right, rgba(255,255,255,.20), transparent 32%),
+        linear-gradient(135deg, #3730a3, #4f46e5 56%, #6d5dfc);
+      color: #fff;
+      box-shadow: var(--shadow);
+    }
+
+    .hero-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 24px;
+      flex-wrap: wrap;
+    }
+
+    .eyebrow {
+      margin: 0 0 8px;
+      text-transform: uppercase;
+      letter-spacing: .12em;
+      font-size: 12px;
+      font-weight: 800;
+      opacity: .78;
+    }
+
+    h1 {
+      margin: 0;
+      font-size: clamp(32px, 5vw, 54px);
+      line-height: 1.05;
+    }
+
+    .hero-copy {
+      max-width: 760px;
+      margin: 14px 0 0;
+      font-size: 18px;
+      opacity: .92;
+    }
+
+    .version {
+      display: inline-flex;
+      align-items: center;
+      border: 1px solid rgba(255,255,255,.32);
+      background: rgba(255,255,255,.13);
+      padding: 8px 12px;
+      border-radius: 999px;
+      font-weight: 800;
+      white-space: nowrap;
+    }
+
+    .hero-grid {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 12px;
+      margin-top: 26px;
+    }
+
+    .hero-stat {
+      padding: 14px;
+      border: 1px solid rgba(255,255,255,.20);
+      border-radius: 12px;
+      background: rgba(255,255,255,.10);
+    }
+
+    .hero-stat strong {
+      display: block;
+      margin-bottom: 3px;
+    }
+
+    .layout {
+      display: grid;
+      grid-template-columns: 260px minmax(0, 1fr);
+      gap: 22px;
+      margin-top: 22px;
+      align-items: start;
+    }
+
+    .toc {
+      position: sticky;
+      top: 18px;
+      padding: 18px;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      background: var(--surface);
+      box-shadow: 0 8px 28px rgba(31,41,55,.06);
+    }
+
+    .toc h2 {
+      margin: 0 0 10px;
+      font-size: 15px;
+    }
+
+    .toc a {
+      display: block;
+      padding: 7px 9px;
+      border-radius: 8px;
+      color: var(--muted);
+      text-decoration: none;
+      font-size: 14px;
+    }
+
+    .toc a:hover {
+      background: var(--accent-soft);
+      color: var(--accent);
+    }
+
+    main {
+      min-width: 0;
+    }
+
+    section {
+      margin-bottom: 20px;
+      padding: 26px;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      background: var(--surface);
+      box-shadow: 0 8px 28px rgba(31,41,55,.05);
+    }
+
+    section h2 {
+      margin: 0 0 8px;
+      font-size: 26px;
+      line-height: 1.2;
+    }
+
+    section h3 {
+      margin: 24px 0 8px;
+      font-size: 18px;
+    }
+
+    section p:first-of-type {
+      margin-top: 6px;
+    }
+
+    .lead {
+      color: var(--muted);
+      font-size: 16px;
+    }
+
+    .callout {
+      margin: 18px 0;
+      padding: 15px 17px;
+      border-left: 4px solid var(--accent);
+      border-radius: 8px;
+      background: var(--accent-soft);
+    }
+
+    .callout.warning {
+      border-left-color: var(--warning);
+      background: #fff8e8;
+    }
+
+    .callout.success {
+      border-left-color: var(--success);
+      background: #eaf8f2;
+    }
+
+    .callout.danger {
+      border-left-color: var(--danger);
+      background: #fff0ee;
+    }
+
+    .steps {
+      counter-reset: guide-step;
+      display: grid;
+      gap: 12px;
+      margin-top: 16px;
+    }
+
+    .step {
+      counter-increment: guide-step;
+      position: relative;
+      padding: 16px 16px 16px 58px;
+      border: 1px solid var(--border);
+      border-radius: 11px;
+      background: var(--surface-soft);
+    }
+
+    .step::before {
+      content: counter(guide-step);
+      position: absolute;
+      top: 14px;
+      left: 15px;
+      width: 28px;
+      height: 28px;
+      display: grid;
+      place-items: center;
+      border-radius: 50%;
+      background: var(--accent);
+      color: #fff;
+      font-weight: 800;
+      font-size: 13px;
+    }
+
+    .step strong {
+      display: block;
+      margin-bottom: 3px;
+    }
+
+    .grid-2,
+    .grid-3 {
+      display: grid;
+      gap: 14px;
+      margin-top: 16px;
+    }
+
+    .grid-2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .grid-3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+
+    .card {
+      padding: 17px;
+      border: 1px solid var(--border);
+      border-radius: 11px;
+      background: var(--surface-soft);
+    }
+
+    .card h3 {
+      margin: 0 0 7px;
+      font-size: 16px;
+    }
+
+    .card p {
+      margin: 0;
+      color: var(--muted);
+      font-size: 14px;
+    }
+
+    .keyboard {
+      display: inline-block;
+      min-width: 24px;
+      padding: 1px 6px;
+      border: 1px solid #b9c1cc;
+      border-bottom-width: 2px;
+      border-radius: 5px;
+      background: #fff;
+      font-family: inherit;
+      font-size: 12px;
+      font-weight: 700;
+      text-align: center;
+    }
+
+    table {
+      width: 100%;
+      margin-top: 14px;
+      border-collapse: collapse;
+      font-size: 14px;
+    }
+
+    th, td {
+      padding: 11px 12px;
+      border: 1px solid var(--border);
+      text-align: left;
+      vertical-align: top;
+    }
+
+    th {
+      background: var(--surface-soft);
+      font-weight: 800;
+    }
+
+    pre {
+      overflow: auto;
+      margin: 14px 0 0;
+      padding: 16px;
+      border-radius: 10px;
+      background: #172033;
+      color: #e7edf7;
+      font-size: 13px;
+      line-height: 1.55;
+    }
+
+    details {
+      margin-top: 10px;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      background: var(--surface-soft);
+    }
+
+    summary {
+      cursor: pointer;
+      padding: 13px 15px;
+      font-weight: 800;
+    }
+
+    details > div {
+      padding: 0 15px 15px;
+      color: var(--muted);
+    }
+
+    .checklist {
+      list-style: none;
+      margin: 14px 0 0;
+      padding: 0;
+    }
+
+    .checklist li {
+      position: relative;
+      padding: 7px 0 7px 30px;
+    }
+
+    .checklist li::before {
+      content: "✓";
+      position: absolute;
+      left: 0;
+      top: 7px;
+      width: 20px;
+      height: 20px;
+      display: grid;
+      place-items: center;
+      border-radius: 50%;
+      background: #eaf8f2;
+      color: var(--success);
+      font-size: 12px;
+      font-weight: 900;
+    }
+
+    .footer {
+      padding: 22px;
+      text-align: center;
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    @media (max-width: 950px) {
+      .layout { grid-template-columns: 1fr; }
+      .toc { position: static; }
+      .hero-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    }
+
+    @media (max-width: 650px) {
+      .page { width: min(100% - 18px, 1280px); margin-top: 9px; }
+      .hero, section { padding: 20px; }
+      .hero-grid, .grid-2, .grid-3 { grid-template-columns: 1fr; }
+      table { display: block; overflow-x: auto; }
+    }
+
+    @media print {
+      body { background: #fff; }
+      .page { width: 100%; margin: 0; }
+      .hero { border-radius: 0; box-shadow: none; }
+      .layout { display: block; }
+      .toc { display: none; }
+      section { break-inside: avoid; box-shadow: none; }
+    }
+  </style>
+</head>
+<body>
+  <div class="page">
+    <header class="hero">
+      <div class="hero-top">
+        <div>
+          <p class="eyebrow">Offline task planning and time reporting</p>
+          <h1>MyTaskAssistant</h1>
+          <p class="hero-copy">
+            A local-first, single-file task manager for organizing projects, tracking effort,
+            monitoring AI-assisted productivity, and producing weekly HTML timesheets.
+          </p>
+        </div>
+        <div class="version">v3.4</div>
+      </div>
+
+      <div class="hero-grid">
+        <div class="hero-stat"><strong>No installation</strong><span>Open the HTML file in a modern browser.</span></div>
+        <div class="hero-stat"><strong>Local-first</strong><span>Your working data stays in your JSON file.</span></div>
+        <div class="hero-stat"><strong>Project aware</strong><span>Manage projects, tasks, subtasks, and dependencies.</span></div>
+        <div class="hero-stat"><strong>Export ready</strong><span>Create filtered JSON and weekly HTML timesheets.</span></div>
+      </div>
+    </header>
+
+    <div class="layout">
+      <nav class="toc" aria-label="Table of contents">
+        <h2>Contents</h2>
+        <a href="#package">Package contents</a>
+        <a href="#quick-start">Quick start</a>
+        <a href="#interface">Interface overview</a>
+        <a href="#projects">Projects</a>
+        <a href="#tasks">Tasks and subtasks</a>
+        <a href="#filters">Filters and views</a>
+        <a href="#effort">Time and AI efficiency</a>
+        <a href="#saving">Opening and saving JSON</a>
+        <a href="#exports">Exports</a>
+        <a href="#timesheet">Weekly timesheet</a>
+        <a href="#data">Data and privacy</a>
+        <a href="#troubleshooting">Troubleshooting</a>
+        <a href="#json">JSON reference</a>
+      </nav>
+
+      <main>
+        <section id="package">
+          <h2>Package contents</h2>
+          <p class="lead">A typical distribution ZIP should contain these files together in one folder.</p>
+          <table>
+            <thead>
+              <tr><th>File</th><th>Purpose</th></tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><code>MyTaskAssistant_v3.4.html</code></td>
+                <td>The application. Open this file in Chrome, Edge, or another modern desktop browser.</td>
+              </tr>
+              <tr>
+                <td><code>ReadMe_v3.4.html</code></td>
+                <td>This user guide.</td>
+              </tr>
+              <tr>
+                <td><code>MyTaskAssistant_Specification_v3.4.md</code></td>
+                <td>Technical and functional specification for maintainers.</td>
+              </tr>
+              <tr>
+                <td><code>YourTasks.json</code></td>
+                <td>Your task data. The user chooses the filename when creating or saving a working file.</td>
+              </tr>
+            </tbody>
+          </table>
+          <div class="callout warning">
+            <strong>Keep the HTML application and your JSON data file separate.</strong>
+            Updating the application HTML does not update or erase the JSON file, but always keep backups of important task data.
+          </div>
+        </section>
+
+        <section id="quick-start">
+          <h2>Quick start</h2>
+          <p class="lead">Use these steps the first time you run MyTaskAssistant.</p>
+          <div class="steps">
+            <div class="step">
+              <strong>Extract the ZIP</strong>
+              Place all files in a normal folder such as Documents or a team-approved working directory.
+            </div>
+            <div class="step">
+              <strong>Open the application</strong>
+              Double-click <code>MyTaskAssistant_v3.4.html</code>. It should open in your default browser.
+            </div>
+            <div class="step">
+              <strong>Open an existing JSON file</strong>
+              Select <b>Open JSON</b>, choose your task file, and confirm that your projects and tasks appear.
+            </div>
+            <div class="step">
+              <strong>Or begin with a new task list</strong>
+              Add projects and tasks, then use <b>Save</b>. Your browser may ask you to choose or approve a JSON file.
+            </div>
+            <div class="step">
+              <strong>Save frequently</strong>
+              MyTaskAssistant works locally. Use <b>Save</b> after meaningful changes.
+            </div>
+          </div>
+          <div class="callout success">
+            <strong>Recommended browser:</strong> current Microsoft Edge or Google Chrome on a desktop or laptop.
+          </div>
+        </section>
+
+        <section id="interface">
+          <h2>Interface overview</h2>
+          <div class="grid-3">
+            <div class="card">
+              <h3>Left navigation</h3>
+              <p>Switch among All, Active, Completed, and Overdue views. Counts update from the loaded task data.</p>
+            </div>
+            <div class="card">
+              <h3>Top actions</h3>
+              <p>Open, save, export, manage projects, create weekly timesheets, and add tasks.</p>
+            </div>
+            <div class="card">
+              <h3>Task grid</h3>
+              <p>Review project, task, status, progress, time, AI efficiency, due dates, dependencies, notes, and actions.</p>
+            </div>
+          </div>
+          <h3>Common row actions</h3>
+          <table>
+            <thead><tr><th>Action</th><th>What it does</th></tr></thead>
+            <tbody>
+              <tr><td>Complete checkbox</td><td>Marks a task completed and sets progress to 100%.</td></tr>
+              <tr><td>Clone</td><td>Creates a copy of the selected task for reuse.</td></tr>
+              <tr><td>Create child task</td><td>Adds a subtask beneath the selected parent task.</td></tr>
+              <tr><td>Edit</td><td>Opens the full task editor.</td></tr>
+              <tr><td>Delete</td><td>Removes the task after confirmation and clears related references where necessary.</td></tr>
+              <tr><td>Drag handle</td><td>Reorders tasks among siblings at the same hierarchy level.</td></tr>
+            </tbody>
+          </table>
+        </section>
+
+        <section id="projects">
+          <h2>Projects</h2>
+          <p class="lead">Projects provide the top-level grouping used throughout the application and in timesheet output.</p>
+          <div class="steps">
+            <div class="step">
+              <strong>Open Projects</strong>
+              Select <b>Projects</b> from the top action bar.
+            </div>
+            <div class="step">
+              <strong>Create or select a project</strong>
+              Enter a project name and optional description, or select an existing project to edit.
+            </div>
+            <div class="step">
+              <strong>Save the project</strong>
+              The project becomes available in task forms and project filters.
+            </div>
+          </div>
+          <div class="callout">
+            The project name appears in bold above the task name in weekly timesheet exports.
+          </div>
+        </section>
+
+        <section id="tasks">
+          <h2>Tasks, subtasks, and dependencies</h2>
+          <h3>Creating a task</h3>
+          <div class="steps">
+            <div class="step"><strong>Select Add Task</strong>Open the task editor from the upper-right action bar.</div>
+            <div class="step"><strong>Enter the essentials</strong>Provide a title, project, status, progress, priority, and due date as needed.</div>
+            <div class="step"><strong>Track work</strong>Enter Time Spent, Estimated Human Effort, and AI Assistance when applicable.</div>
+            <div class="step"><strong>Add relationships</strong>Choose a parent task for hierarchy and dependency tasks for sequencing.</div>
+            <div class="step"><strong>Save</strong>The dialog closes and the task grid refreshes.</div>
+          </div>
+
+          <h3>Hierarchy</h3>
+          <p>
+            A child task belongs beneath a parent task. Use the child-task icon on a row or select a parent in the task editor.
+            Reordering is limited to tasks at the same hierarchy level.
+          </p>
+
+          <h3>Dependencies</h3>
+          <p>
+            Dependencies identify tasks that should be completed first. They are informational and help users understand sequencing;
+            they do not automatically prevent completion.
+          </p>
+
+          <h3>Completion</h3>
+          <p>
+            A task is treated as complete when its status is <b>Completed</b> or its progress reaches 100%.
+            The task editor provides both upper and lower action buttons for convenience.
+          </p>
+        </section>
+
+        <section id="filters">
+          <h2>Filters, search, and views</h2>
+          <p class="lead">Filters work together. The task grid displays only rows matching every active condition.</p>
+          <div class="grid-2">
+            <div class="card">
+              <h3>Search</h3>
+              <p>Searches the task's stored content, including title, notes, status, project identifiers, and other fields.</p>
+            </div>
+            <div class="card">
+              <h3>Project</h3>
+              <p>Shows all projects or only tasks assigned to the selected project.</p>
+            </div>
+            <div class="card">
+              <h3>Status</h3>
+              <p>Filters by All, Active, or a specific stored status.</p>
+            </div>
+            <div class="card">
+              <h3>Due date</h3>
+              <p>Supports Past Due, Today, Tomorrow, This Week, and Next Week.</p>
+            </div>
+          </div>
+          <div class="callout">
+            <b>Due This Week</b> covers the entire current Sunday-through-Saturday calendar week, including items that became past due earlier in that same week.
+          </div>
+          <p>
+            The <b>Hide Completed</b> checkbox can be combined with the other filters. The left navigation also provides All,
+            Active, Completed, and Overdue views.
+          </p>
+        </section>
+
+        <section id="effort">
+          <h2>Time Spent and AI Efficiency</h2>
+          <p class="lead">
+            Time Spent is the single source of truth for actual effort. The older separate Actual Effort field is no longer used.
+          </p>
+
+          <h3>Effort fields</h3>
+          <table>
+            <thead><tr><th>Field</th><th>Meaning</th></tr></thead>
+            <tbody>
+              <tr><td>Estimated Human Effort</td><td>How many hours the task would normally take without the measured savings.</td></tr>
+              <tr><td>Time Spent</td><td>The actual hours used to complete or advance the task.</td></tr>
+              <tr><td>AI Assistance</td><td>The estimated percentage of the work meaningfully assisted by AI, from 0% to 100%.</td></tr>
+            </tbody>
+          </table>
+
+          <h3>AI Efficiency calculation</h3>
+          <pre>Human Time Saved = Estimated Human Effort - Time Spent
+
+Savings Ratio = Human Time Saved / Estimated Human Effort
+
+AI Efficiency = Savings Ratio × (AI Assistance / 100)</pre>
+
+          <div class="callout">
+            Example: estimated effort 10 hours, time spent 4 hours, and AI assistance 80% produces an AI Efficiency value of 48%.
+          </div>
+
+          <h3>Row tooltips</h3>
+          <p>
+            Hover over the Hours value to see the estimated and actual hours. Hover over the AI Efficiency percentage for a detailed calculation.
+            When no AI assistance value is captured, the default assumption is 0%.
+          </p>
+        </section>
+
+        <section id="saving">
+          <h2>Opening, saving, and backing up JSON</h2>
+          <h3>Open JSON</h3>
+          <p>
+            Select <b>Open JSON</b> and choose a MyTaskAssistant data file. The application normalizes supported older fields when loading.
+          </p>
+
+          <h3>Save</h3>
+          <p>
+            Select <b>Save</b> to write the current projects and tasks back to the opened JSON file. Depending on browser security settings,
+            you may need to grant permission or select a location.
+          </p>
+
+          <div class="callout danger">
+            <strong>There is no remote server or automatic cloud backup.</strong>
+            Create regular copies of the JSON file using your organization's approved storage and backup practices.
+          </div>
+
+          <h3>Suggested backup practice</h3>
+          <ul class="checklist">
+            <li>Save after major edits.</li>
+            <li>Keep dated backup copies before importing or restructuring many tasks.</li>
+            <li>Do not edit the JSON manually unless you understand the schema.</li>
+            <li>Test a backup by opening it in MyTaskAssistant.</li>
+          </ul>
+        </section>
+
+        <section id="exports">
+          <h2>Export options</h2>
+          <table>
+            <thead><tr><th>Export</th><th>Contents</th><th>Format</th></tr></thead>
+            <tbody>
+              <tr>
+                <td>Export View</td>
+                <td>Only tasks visible under the current search, project, status, due-date, hide-completed, and navigation filters.</td>
+                <td>JSON</td>
+              </tr>
+              <tr>
+                <td>Export Active</td>
+                <td>All incomplete tasks, regardless of the current view filters.</td>
+                <td>JSON</td>
+              </tr>
+              <tr>
+                <td>Weekly Timesheet</td>
+                <td>Eligible time-bearing tasks for a selected week, with editable daily allocation and totals.</td>
+                <td>Standalone HTML</td>
+              </tr>
+            </tbody>
+          </table>
+          <div class="callout warning">
+            Exported JSON files are reports or subsets. Use the main saved JSON file as the authoritative working data file.
+          </div>
+        </section>
+
+        <section id="timesheet">
+          <h2>Weekly Timesheet export</h2>
+          <p class="lead">
+            The Weekly Timesheet feature creates a browser-viewable, printable HTML report modeled after a traditional weekly timesheet.
+          </p>
+
+          <h3>Eligible tasks</h3>
+          <p>A task is included when all of the following are true:</p>
+          <ul class="checklist">
+            <li>Time Spent is greater than zero.</li>
+            <li>Status is anything except Not Started.</li>
+            <li>The task's due date falls within the selected Sunday-through-Saturday week.</li>
+          </ul>
+
+          <h3>Create a timesheet</h3>
+          <div class="steps">
+            <div class="step">
+              <strong>Select Weekly Timesheet</strong>
+              Open the large timesheet dialog from the main toolbar.
+            </div>
+            <div class="step">
+              <strong>Choose a date within the target week</strong>
+              The application determines the full Sunday-through-Saturday period.
+            </div>
+            <div class="step">
+              <strong>Generate or review the preview</strong>
+              Changing the week clears the previous rows and refreshes the selected week.
+            </div>
+            <div class="step">
+              <strong>Adjust daily hours</strong>
+              Move or divide hours across the day columns. Row totals, daily totals, task count, and grand total update immediately.
+            </div>
+            <div class="step">
+              <strong>Download HTML</strong>
+              The result is a standalone file that can be opened, printed, emailed, or retained with supporting records.
+            </div>
+          </div>
+
+          <h3>How initial daily allocation works</h3>
+          <p>
+            MyTaskAssistant stores a task's total Time Spent, not a separate time-entry history. For the preview, the total is initially placed on the task's due-date column. Tasks without a due date in the selected week are excluded. Review and edit the daily values before downloading.
+          </p>
+
+          <div class="callout success">
+            The preview includes sticky day headers and a sticky Grand Total row to remain readable while scrolling.
+          </div>
+        </section>
+
+        <section id="data">
+          <h2>Data, privacy, and browser permissions</h2>
+          <p>
+            MyTaskAssistant is a local HTML application. It does not require a backend or database and does not send task data to a remote service
+            as part of its built-in operation.
+          </p>
+
+          <div class="grid-2">
+            <div class="card">
+              <h3>Where data lives</h3>
+              <p>Projects and tasks live in the JSON file selected or saved by the user.</p>
+            </div>
+            <div class="card">
+              <h3>Browser permissions</h3>
+              <p>The browser may request access to open or write a local file. This is expected for local file handling.</p>
+            </div>
+            <div class="card">
+              <h3>Sensitive information</h3>
+              <p>Avoid putting confidential or regulated information in task titles, notes, or exports unless approved by your organization.</p>
+            </div>
+            <div class="card">
+              <h3>Shared computers</h3>
+              <p>Remove exported files and working JSON files from shared locations when they are no longer needed.</p>
+            </div>
+          </div>
+        </section>
+
+        <section id="troubleshooting">
+          <h2>Troubleshooting</h2>
+
+          <details open>
+            <summary>The application opens but no tasks appear</summary>
+            <div>
+              Confirm that you selected <b>Open JSON</b> and chose the correct working file. Clear active filters and switch to the All view.
+            </div>
+          </details>
+
+          <details>
+            <summary>Save does not work</summary>
+            <div>
+              Use a current version of Edge or Chrome. Confirm browser permission prompts. If direct saving is blocked, export or copy the data file
+              to an approved writable folder and reopen it.
+            </div>
+          </details>
+
+          <details>
+            <summary>A task is missing from Due This Week</summary>
+            <div>
+              Confirm its due date is inside the current Sunday-through-Saturday week and that other filters, such as project, status, navigation view,
+              or Hide Completed, are not excluding it.
+            </div>
+          </details>
+
+          <details>
+            <summary>The weekly timesheet has no rows</summary>
+            <div>
+              Check that tasks have Time Spent greater than zero, are not Not Started, and have a due date within the selected week.
+            </div>
+          </details>
+
+          <details>
+            <summary>Hours are on the wrong day in the timesheet</summary>
+            <div>
+              This can occur because task data stores total Time Spent rather than daily entries. Edit the day cells in the preview before downloading.
+            </div>
+          </details>
+
+          <details>
+            <summary>AI Efficiency is blank</summary>
+            <div>
+              A valid estimate is required. Time Spent is used as actual effort. Legacy tasks with no AI tracking data display 0% under the default
+              assumption of no AI assistance.
+            </div>
+          </details>
+
+          <details>
+            <summary>The exported HTML looks different when printed</summary>
+            <div>
+              Use the browser print preview, choose landscape orientation when necessary, and reduce margins or scale if the weekly columns do not fit.
+            </div>
+          </details>
+        </section>
+
+        <section id="json">
+          <h2>JSON reference</h2>
+          <p class="lead">This section is for advanced users and maintainers.</p>
+          <p>A simplified task record resembles the following:</p>
+          <pre>{
+  "id": "task-123",
+  "title": "Prepare weekly status report",
+  "projectId": "project-operations",
+  "status": "In Progress",
+  "percentComplete": 60,
+  "hoursSpent": 2.5,
+  "estimatedHumanEffort": 5,
+  "percentageOfAIAssistance": 50,
+  "priorityOrder": 1,
+  "dueDate": "2026-07-24",
+  "notes": "Compile project updates.",
+  "dependsOn": [],
+  "parentId": null,
+  "createdAt": "2026-07-20T15:00:00.000Z",
+  "updatedAt": "2026-07-24T16:30:00.000Z"
+}</pre>
+
+          <h3>Important compatibility behavior</h3>
+          <ul class="checklist">
+            <li><code>hoursSpent</code> is the current actual-effort field.</li>
+            <li>A legacy <code>actualEffort</code> value may be used as an import fallback when valid Time Spent is unavailable.</li>
+            <li>Missing AI assistance is normalized to 0%.</li>
+            <li>AI Efficiency is derived at runtime and is not stored as a separate authoritative field.</li>
+          </ul>
+        </section>
+      </main>
+    </div>
+
+    <footer class="footer">
+      MyTaskAssistant v3.4 · Standalone local-first application guide · Generated for distribution with the application package
+    </footer>
+  </div>
+</body>
+</html>
