@@ -1,6 +1,6 @@
 # MyTaskAssistant
 
-**Version:** v3.5.7
+**Version:** v3.5.8
 
 A local-first, single-file task manager for organizing projects, tracking effort, monitoring AI-assisted productivity, and producing weekly HTML timesheets. No installation, no backend, no database, no account — just open one HTML file in a modern browser.
 
@@ -23,6 +23,7 @@ A local-first, single-file task manager for organizing projects, tracking effort
 - **Due Last Week** — a Due Date dropdown option that shows tasks due in the complete Sunday-through-Saturday week before the current week.
 - **Sub-Tasks tab** — when editing a saved parent task, select **Sub-Tasks** beside **Task Detail** to replace the detail form with full-width rows for direct child tasks. Each row shows title, status, and Time Spent; select a row to load that child into the same task editor window.
 - **Completion validation** — completing a task requires both Estimated Hours and Time Spent to be greater than zero, and applies the same AI productivity validation used when saving a task.
+- **Notes** — task rows preview up to five note lines. A bold **...(see more)** link appears for longer notes and opens the task editor; the editor provides an Expand Notes control for comfortable long-note reading and editing.
 - **Time and AI productivity tracking** — per task, capture:
   - `estimatedHours` — your original estimate
   - `timeSpent` — actual hours worked

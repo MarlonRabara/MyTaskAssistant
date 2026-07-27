@@ -1,5 +1,5 @@
 # MyTaskAssistant Specification
-**Application Version:** v3.5.7  
+**Application Version:** v3.5.8  
 **Last Updated:** 2026-07-23
 
 ## Overview
@@ -805,3 +805,10 @@ This permits time spent on blocked, deferred, canceled, or otherwise interrupted
 
 - Refined the Weekly Timesheet and AI Analysis dialog gutters, header alignment, helper-text spacing, and report-preview padding.
 - The dialogs retain usable table width and horizontal scrolling, with compact responsive spacing on smaller screens.
+
+
+## v3.5.8 Task-Row Note Preview and Expandable Editor Notes
+
+- Task-row Notes display up to five lines of text.
+- When a note exceeds five lines, a bold `...(see more)` action appears after the preview. Selecting it opens that task in the task editor.
+- The task editor Notes field provides an Expand Notes / Collapse Notes control so longer notes can be read and edited with a larger text area.

@@ -31,6 +31,34 @@
       --radius-sm: 10px;
     }
 
+    .task-note-preview {
+      display: -webkit-box;
+      overflow: hidden;
+      -webkit-box-orient: vertical;
+      -webkit-line-clamp: 5;
+      line-height: 1.4;
+      white-space: pre-wrap;
+    }
+
+    .see-more-notes {
+      display: none;
+      margin-top: 4px;
+      padding: 0;
+      border: 0;
+      background: transparent;
+      color: var(--accent);
+      font: inherit;
+      font-weight: 800;
+      cursor: pointer;
+    }
+
+    .see-more-notes.visible { display: inline; }
+    .see-more-notes:hover { text-decoration: underline; }
+
+    .notes-label-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+    .expand-notes-btn { padding: 4px 8px; font-size: 12px; }
+    #taskNotesInput.expanded { min-height: min(50vh, 520px); }
+
     @media (prefers-color-scheme: dark) {
       :root {
         --bg: #0f1420;
@@ -1319,7 +1347,7 @@
   <path d="M36 32.5v7M32.5 36h7" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/>
 </svg></div>
         <div>
-          <h1>MyTaskAssistant <span class="version-badge">v3.5.7</span></h1>
+          <h1>MyTaskAssistant <span class="version-badge">v3.5.8</span></h1>
           <p>Personal task manager</p>
         </div>
       </div>
@@ -1580,7 +1608,10 @@
         <div class="typeahead-helper">You can select multiple tasks. Selected tasks must be completed first.</div>
       </div>
       <div class="form-group full">
-        <label for="taskNotesInput">Notes</label>
+        <div class="notes-label-row">
+          <label for="taskNotesInput">Notes</label>
+          <button class="btn btn-secondary expand-notes-btn" id="expandNotesBtn" type="button" aria-expanded="false">Expand Notes</button>
+        </div>
         <textarea id="taskNotesInput"></textarea>
       </div>
         </div>
@@ -1753,6 +1784,20 @@
         createdAt: task.createdAt ?? new Date().toISOString(),
         updatedAt: task.updatedAt ?? new Date().toISOString()
       };
+    }
+
+    function renderTaskNote(task) {
+      if (!task.notes) return "—";
+      return `<div class="task-note-preview" data-note-preview>${linkifyNotes(task.notes)}</div><button class="see-more-notes" type="button" data-edit-id="${escapeHtml(task.id)}">...(see more)</button>`;
+    }
+
+    function updateTruncatedNoteControls() {
+      document.querySelectorAll("[data-note-preview]").forEach(preview => {
+        const seeMore = preview.nextElementSibling;
+        if (seeMore?.classList.contains("see-more-notes")) {
+          seeMore.classList.toggle("visible", preview.scrollHeight > preview.clientHeight + 1);
+        }
+      });
     }
 
     function isComplete(task) {
@@ -2283,7 +2328,7 @@ Calculated AI Assistance: ${percentage}%`;
             <td>${escapeHtml(formatDate(task.dueDate))}</td>
             <td>${daysLabel(task)}</td>
             <td><div class="dependency-list">${dependencies}</div></td>
-            <td class="notes-cell">${task.notes ? linkifyNotes(task.notes) : "—"}</td>
+            <td class="notes-cell">${renderTaskNote(task)}</td>
             <td>
               <div class="row-actions" aria-label="Task actions">
                 <button class="icon-btn" type="button" data-clone-id="${escapeHtml(task.id)}" title="Clone Task" aria-label="Clone Task">
@@ -2323,6 +2368,8 @@ Calculated AI Assistance: ${percentage}%`;
             </td>
           </tr>`;
       }).join("");
+
+      requestAnimationFrame(updateTruncatedNoteControls);
 
       document.querySelectorAll("[data-task-id]").forEach(row => {
         row.addEventListener("dblclick", () => openTaskDialog(row.dataset.taskId));
@@ -2584,6 +2631,9 @@ Calculated AI Assistance: ${percentage}%`;
       $("taskParentSearch").value = "";
       $("taskDependencySearch").value = "";
       $("taskNotesInput").value = task?.notes ?? "";
+      $("taskNotesInput").classList.remove("expanded");
+      $("expandNotesBtn").textContent = "Expand Notes";
+      $("expandNotesBtn").setAttribute("aria-expanded", "false");
       showTaskEditorTab("detail");
       renderSubTasks(task);
       renderSelectedParent();
@@ -3323,6 +3373,11 @@ Calculated AI Assistance: ${percentage}%`;
     $("saveTaskTopBtn").addEventListener("click", saveTaskFromDialog);
     $("markCompleteBtn").addEventListener("click", markTaskCompleteInDialog);
     $("markCompleteTopBtn").addEventListener("click", markTaskCompleteInDialog);
+    $("expandNotesBtn").addEventListener("click", () => {
+      const expanded = $("taskNotesInput").classList.toggle("expanded");
+      $("expandNotesBtn").textContent = expanded ? "Collapse Notes" : "Expand Notes";
+      $("expandNotesBtn").setAttribute("aria-expanded", String(expanded));
+    });
     $("taskDetailTab").addEventListener("click", () => showTaskEditorTab("detail"));
     $("subTasksTab").addEventListener("click", () => showTaskEditorTab("subtasks"));
     $("taskParentSearch").addEventListener("input", renderParentResults);
