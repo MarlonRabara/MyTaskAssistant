@@ -1843,6 +1843,78 @@
       return ordered;
     }
 
+    function childTasks(parentId) {
+      return data.tasks.filter(task => task.parentId === parentId);
+    }
+
+    function descendantTasks(parentId) {
+      const descendants = [];
+      const pendingParentIds = [parentId];
+      const visited = new Set();
+
+      while (pendingParentIds.length) {
+        const currentParentId = pendingParentIds.pop();
+        childTasks(currentParentId).forEach(child => {
+          if (visited.has(child.id)) return;
+          visited.add(child.id);
+          descendants.push(child);
+          pendingParentIds.push(child.id);
+        });
+      }
+
+      return descendants;
+    }
+
+    function hasChildren(task) {
+      return childTasks(task.id).length > 0;
+    }
+
+    function taskRollup(task) {
+      const descendants = descendantTasks(task.id);
+      if (!descendants.length) return null;
+
+      const sum = field => descendants.reduce((total, child) => total + Number(child[field] || 0), 0);
+      const totalEffortWithoutAI = sum("estimatedEffortWithoutAI");
+      const weightedAIAssistance = totalEffortWithoutAI > 0
+        ? descendants.reduce((total, child) => total + (Number(child.aiAssistancePercentage || 0) * Number(child.estimatedEffortWithoutAI || 0)), 0) / totalEffortWithoutAI
+        : 0;
+      return {
+        estimatedHours: sum("estimatedHours"),
+        timeSpent: sum("timeSpent"),
+        estimatedEffortWithoutAI: totalEffortWithoutAI,
+        aiAssistancePercentage: weightedAIAssistance
+      };
+    }
+
+    function taskValuesForDisplay(task) {
+      return taskRollup(task) || task;
+    }
+
+    function parentAIAssistanceTooltip(task, rollup) {
+      const descendants = descendantTasks(task.id);
+      const totalEffortWithoutAI = rollup?.estimatedEffortWithoutAI || 0;
+      const percentage = Math.round(rollup?.aiAssistancePercentage || 0);
+      return `This parent task value is calculated from ${descendants.length} child task${descendants.length === 1 ? "" : "s"}.
+
+AI Assistance = weighted average of each child task's AI Assistance percentage, using Estimated Effort Without AI as the weight.
+
+Calculation:
+Σ (child AI Assistance % × child Estimated Effort Without AI) ÷ Σ child Estimated Effort Without AI
+
+Total Estimated Effort Without AI: ${totalEffortWithoutAI.toFixed(2)} h
+Calculated AI Assistance: ${percentage}%`;
+    }
+
+    function hasIncompleteDescendants(task) {
+      return descendantTasks(task.id).some(child => !isComplete(child));
+    }
+
+    function canCompleteTask(task) {
+      if (!hasIncompleteDescendants(task)) return true;
+      alert(`"${task.title}" cannot be completed until all child tasks are completed.`);
+      return false;
+    }
+
     function moveTaskWithinLevel(draggedId, targetId) {
       if (draggedId === targetId) return;
       const dragged = data.tasks.find(task => task.id === draggedId);
@@ -2038,7 +2110,8 @@
         const dependencies = task.dependsOn.length
           ? task.dependsOn.map(id => `<span class="dependency-chip">${escapeHtml(taskNameById(id))}</span>`).join("")
           : '<span class="notes-cell">None</span>';
-        const aiHoursSaved = aiHoursSavedDetails(task);
+        const displayTask = taskValuesForDisplay(task);
+        const aiHoursSaved = aiHoursSavedDetails(displayTask);
 
         return `
           <tr class="task-row" data-task-id="${escapeHtml(task.id)}" data-parent-id="${escapeHtml(task.parentId || "")}">
@@ -2072,7 +2145,7 @@
                 <div class="progress-text">${task.percentComplete}%</div>
               </div>
             </td>
-            <td><span title="${escapeHtml(hoursTooltip(task))}">${escapeHtml(formatHours(task.timeSpent))}</span></td>
+            <td><span title="${escapeHtml(hoursTooltip(displayTask))}">${escapeHtml(formatHours(displayTask.timeSpent))}</span></td>
             <td>${aiHoursSaved.display ? `<span class="ai-efficiency-value" title="${escapeHtml(aiHoursSaved.tooltip)}">${escapeHtml(aiHoursSaved.display)}</span>` : ""}</td>
             <td>${escapeHtml(formatDate(task.dueDate))}</td>
             <td>${daysLabel(task)}</td>
@@ -2126,6 +2199,10 @@
         box.addEventListener("change", () => {
           const task = data.tasks.find(t => t.id === box.dataset.completeId);
           if (!task) return;
+          if (box.checked && !canCompleteTask(task)) {
+            box.checked = false;
+            return;
+          }
           task.status = box.checked ? "Completed" : "In Progress";
           task.percentComplete = box.checked ? 100 : Math.min(task.percentComplete, 95);
           task.updatedAt = new Date().toISOString();
@@ -2338,6 +2415,9 @@
     function openTaskDialog(id = null, defaults = {}) {
       editingTaskId = id;
       const task = id ? data.tasks.find(t => t.id === id) : null;
+      const rollup = task ? taskRollup(task) : null;
+      const hasChildTasks = Boolean(rollup);
+      const displayTask = rollup ? { ...task, ...rollup } : task;
       const proposedTaskId = task?.id ?? generateTaskId();
       $("dialogTitle").textContent = task
         ? `Edit Task (${task.id})`
@@ -2347,12 +2427,22 @@
       $("taskProjectInput").value = task?.projectId ?? defaults.projectId ?? "";
       $("taskStatusInput").value = task?.status ?? "Not Started";
       $("taskProgressInput").value = task?.percentComplete ?? 0;
-      $("taskHoursInput").value = task?.timeSpent ?? 0;
-      $("estimatedHoursInput").value = task?.estimatedHours ?? "";
-      $("estimatedEffortWithoutAIInput").value = task?.estimatedEffortWithoutAI ?? "";
-      $("percentageOfAIAssistanceInput").value = task?.aiAssistancePercentage ?? 0;
-      $("percentageOfAIAssistanceValue").value = `${task?.aiAssistancePercentage ?? 0}%`;
-      $("percentageOfAIAssistanceValue").textContent = `${task?.aiAssistancePercentage ?? 0}%`;
+      $("taskHoursInput").value = displayTask?.timeSpent ?? 0;
+      $("estimatedHoursInput").value = displayTask?.estimatedHours ?? "";
+      $("estimatedEffortWithoutAIInput").value = displayTask?.estimatedEffortWithoutAI ?? "";
+      ["taskHoursInput", "estimatedHoursInput", "estimatedEffortWithoutAIInput"].forEach(id => {
+        $(id).disabled = hasChildTasks;
+        $(id).title = hasChildTasks
+          ? "This parent task value is calculated from its child tasks."
+          : "";
+      });
+      $("percentageOfAIAssistanceInput").value = displayTask?.aiAssistancePercentage ?? 0;
+      $("percentageOfAIAssistanceInput").disabled = hasChildTasks;
+      $("percentageOfAIAssistanceInput").title = hasChildTasks
+        ? parentAIAssistanceTooltip(task, rollup)
+        : "";
+      $("percentageOfAIAssistanceValue").value = `${Math.round(displayTask?.aiAssistancePercentage ?? 0)}%`;
+      $("percentageOfAIAssistanceValue").textContent = `${Math.round(displayTask?.aiAssistancePercentage ?? 0)}%`;
       const initialParentId = task?.parentId ?? defaults.parentId ?? null;
       $("taskPriorityInput").value = task?.priorityOrder ?? (siblingTasks(initialParentId).length + 1);
       $("taskDueDateInput").value = task?.dueDate ?? "";
@@ -2482,12 +2572,12 @@
     }
 
     function markTaskCompleteInDialog() {
-      $("taskStatusInput").value = "Completed";
-      $("taskProgressInput").value = 100;
-
       if (editingTaskId) {
         const task = data.tasks.find(t => t.id === editingTaskId);
         if (task) {
+          if (!canCompleteTask(task)) return;
+          $("taskStatusInput").value = "Completed";
+          $("taskProgressInput").value = 100;
           task.status = "Completed";
           task.percentComplete = 100;
           task.updatedAt = new Date().toISOString();
@@ -2530,6 +2620,10 @@
       }
 
       const existing = editingTaskId ? data.tasks.find(t => t.id === editingTaskId) : null;
+      const rollup = existing ? taskRollup(existing) : null;
+      const hasChildTasks = Boolean(rollup);
+
+      if (existing && $("taskStatusInput").value === "Completed" && !canCompleteTask(existing)) return;
 
       const aiAssistanceValue = Math.max(0, Math.min(100, Number($("percentageOfAIAssistanceInput").value || 0)));
       const effortWithoutAIRaw = $("estimatedEffortWithoutAIInput").value;
@@ -2548,9 +2642,9 @@
         projectId: $("taskProjectInput").value,
         status: $("taskStatusInput").value,
         percentComplete: Number($("taskProgressInput").value || 0),
-        estimatedHours: $("estimatedHoursInput").value === "" ? null : Math.max(0, Number($("estimatedHoursInput").value)),
-        timeSpent: timeSpentValue,
-        estimatedEffortWithoutAI: effortWithoutAIValue,
+        estimatedHours: hasChildTasks ? existing.estimatedHours : ($("estimatedHoursInput").value === "" ? null : Math.max(0, Number($("estimatedHoursInput").value))),
+        timeSpent: hasChildTasks ? existing.timeSpent : timeSpentValue,
+        estimatedEffortWithoutAI: hasChildTasks ? existing.estimatedEffortWithoutAI : effortWithoutAIValue,
         aiAssistancePercentage: aiAssistanceValue,
         priorityOrder: Math.max(1, Number($("taskPriorityInput").value || (siblingTasks(selectedParentId).length + 1))),
         dueDate: $("taskDueDateInput").value,
@@ -2813,6 +2907,10 @@
         const cell = document.querySelector(`[data-timesheet-row-total="${rowIndex}"]`);
         if (cell) cell.textContent = rowTotal ? rowTotal.toFixed(2) : "";
       });
+      $("percentageOfAIAssistanceInput").disabled = hasChildTasks;
+      $("percentageOfAIAssistanceInput").title = hasChildTasks
+        ? "This parent task value is calculated from its child tasks."
+        : "";
 
       const grandCell = $("timesheetGrandTotal");
       if (grandCell) grandCell.textContent = grandTotal.toFixed(2);
