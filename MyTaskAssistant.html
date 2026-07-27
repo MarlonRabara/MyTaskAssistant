@@ -31,6 +31,35 @@
       --radius-sm: 10px;
     }
 
+    function firstNoteLink(notes) {
+      const match = String(notes || "").match(/(?:https?:\/\/|www\.)[^\s<]+/i);
+      if (!match) return "";
+      const link = match[0].replace(/[),.;!?]+$/, "");
+      return link.toLowerCase().startsWith("www.") ? `https://${link}` : link;
+    }
+
+    function taskHierarchyMarker(task) {
+      return hasChildren(task)
+        ? '<span class="task-hierarchy-marker branch" title="Parent task with child tasks" aria-label="Parent task with child tasks"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 21V4"></path><path d="M12 10 6 5"></path><path d="M12 14 18 9"></path><path d="M6 5v-2"></path><path d="M18 9V7"></path><path d="M12 4V2"></path></svg></span>'
+        : '<span class="task-hierarchy-marker leaf" title="Terminal work task with no child tasks" aria-label="Terminal work task with no child tasks"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 4C12 4 5 8 5 15c0 3 2 5 5 5 7 0 10-7 10-16Z"></path><path d="M5 20c3-4 7-7 12-10"></path></svg></span>';
+    }
+
+    .task-hierarchy-marker {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 18px;
+      height: 18px;
+    }
+
+    .task-hierarchy-marker svg { width: 17px; height: 17px; }
+    .task-hierarchy-marker.leaf { color: #2f855a; }
+    .task-hierarchy-marker.branch { color: #8b5a2b; }
+
+    .goto-link-btn:not(:disabled) { color: var(--accent); }
+    .goto-link-btn:not(:disabled):hover { color: var(--accent-2); border-color: color-mix(in srgb, var(--accent) 35%, var(--line)); }
+    .goto-link-btn:disabled { opacity: .45; cursor: not-allowed; }
+
     .task-note-preview {
       display: -webkit-box;
       overflow: hidden;
@@ -282,6 +311,7 @@
     }
 
     .workspace {
+      min-width: 0;
       background: var(--surface);
       border: 1px solid var(--line);
       border-radius: 18px;
@@ -332,7 +362,26 @@
       white-space: nowrap;
     }
 
-    .table-wrap { overflow-x: auto; }
+    .table-wrap {
+      display: block;
+      width: 100%;
+      max-width: 100%;
+      overflow-x: auto;
+      overflow-y: hidden;
+      scrollbar-gutter: stable;
+      -webkit-overflow-scrolling: touch;
+    }
+
+    .table-wrap::-webkit-scrollbar { height: 12px; }
+    .table-wrap::-webkit-scrollbar-track { background: var(--surface-2); }
+    .table-wrap::-webkit-scrollbar-thumb { background: #9aa5b5; border: 3px solid var(--surface-2); border-radius: 999px; }
+
+    @media (max-width: 1120px) {
+      .table-wrap {
+        overflow-x: scroll;
+        padding-bottom: 4px;
+      }
+    }
 
     table {
       width: 100%;
@@ -372,11 +421,16 @@
 
     .ai-efficiency-value {
       display: inline-block;
-      min-width: 34px;
+      min-width: 48px;
       text-align: center;
-      font-weight: 700;
+      font-weight: 400;
+      white-space: nowrap;
       cursor: help;
     }
+
+    .ai-efficiency-header { min-width: 56px; }
+
+    .due-date-cell { white-space: nowrap; }
 
     .ai-slider-group {
       padding-top: 2px;
@@ -506,6 +560,77 @@
     .status.completed { background: var(--success-soft); color: var(--success); }
     .status.waiting { background: var(--warning-soft); color: var(--warning); }
     .status.blocked { background: var(--blocked-soft); color: var(--blocked); }
+    .parent-status-warning {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 16px;
+      height: 16px;
+      margin-right: 4px;
+      border-radius: 50%;
+      background: var(--blocked);
+      color: #fff;
+      font-size: 12px;
+      font-weight: 900;
+      line-height: 1;
+      vertical-align: middle;
+      cursor: help;
+    }
+
+    .dependency-indicator {
+      position: relative;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 3px;
+      min-width: 28px;
+      height: 28px;
+      padding: 0 4px;
+      border-radius: 5px;
+      color: #52606d;
+      cursor: help;
+    }
+
+    .dependency-indicator:hover { background: rgba(31, 95, 153, 0.08); }
+    .dependency-indicator.has-incomplete-dependencies { color: #b56a00; }
+    .dependency-indicator.is-blocked-by-dependency { color: #b42318; }
+    .dependency-tooltip {
+      position: fixed;
+      z-index: 20;
+      left: 0;
+      top: 0;
+      display: none;
+      width: max-content;
+      max-width: 360px;
+      padding: 10px 12px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: var(--surface);
+      color: var(--text);
+      box-shadow: var(--shadow-md);
+      font-size: 12px;
+      font-weight: 400;
+      line-height: 1.45;
+      text-align: left;
+      white-space: normal;
+      pointer-events: none;
+    }
+    .dependency-tooltip strong { display: block; margin-bottom: 4px; }
+    .dependency-tooltip-summary { display: block; margin-bottom: 7px; color: var(--muted); }
+    .dependency-tooltip-list { margin: 0; padding-left: 16px; }
+    .dependency-tooltip-list li { margin: 2px 0; }
+    .dependency-count {
+      min-width: 16px;
+      height: 16px;
+      padding: 0 4px;
+      border-radius: 8px;
+      background: #e8edf2;
+      color: #344054;
+      font-size: 10px;
+      font-weight: 700;
+      line-height: 16px;
+      text-align: center;
+    }
 
     .days.ok { background: var(--success-soft); color: var(--success); }
     .days.soon { background: var(--warning-soft); color: var(--warning); }
@@ -517,6 +642,36 @@
       grid-template-columns: 70px 38px;
       align-items: center;
       gap: 8px;
+    }
+
+    function renderDependencyIndicator(task, displayStatus) {
+      const dependencyIds = Array.isArray(task.dependsOn) ? task.dependsOn.filter(Boolean) : [];
+      if (!dependencyIds.length) return "";
+
+      const dependencies = dependencyIds.map(id => data.tasks.find(candidate => String(candidate.id) === String(id)));
+      const unresolvedCount = dependencies.filter(dependency => !dependency).length;
+      const incompleteCount = dependencies.filter(dependency => !dependency || !isComplete(dependency)).length;
+      const allComplete = incompleteCount === 0;
+      const blockedByDependency = incompleteCount > 0 && displayStatus === "Blocked";
+      const stateClass = blockedByDependency
+        ? " is-blocked-by-dependency"
+        : incompleteCount > 0 ? " has-incomplete-dependencies" : "";
+      const dependencyText = `This task depends on ${dependencyIds.length} other task${dependencyIds.length === 1 ? "" : "s"}.`;
+      const resolutionText = allComplete
+        ? "All dependencies are complete."
+        : `${incompleteCount} dependenc${incompleteCount === 1 ? "y remains" : "ies remain"} incomplete.${unresolvedCount ? ` ${unresolvedCount} dependenc${unresolvedCount === 1 ? "y is" : "ies are"} unresolved.` : ""}`;
+      const blockedText = blockedByDependency ? " This task is blocked until its dependencies are completed." : "";
+      const dependencyList = dependencies.map((dependency, index) =>
+        dependency
+          ? `• ${dependency.title || dependency.id} — ${isComplete(dependency) ? "Completed" : (dependency.status || "Not Started")}`
+          : `• ${dependencyIds[index]} — Unresolved dependency`
+      ).join("\n");
+      const tooltip = `Dependencies\n\n${dependencyText}\n${resolutionText}${blockedText}\n\nDependency items:\n${dependencyList}`;
+      const tooltipId = `dependency-tooltip-${String(task.id).replace(/[^a-zA-Z0-9_-]/g, "-")}`;
+      const dependencyListHtml = dependencies.map((dependency, index) =>
+        `<li>${escapeHtml(dependency ? `${dependency.title || dependency.id} — ${isComplete(dependency) ? "Completed" : (dependency.status || "Not Started")}` : `${dependencyIds[index]} — Unresolved dependency`)}</li>`
+      ).join("");
+      return `<span class="dependency-indicator${stateClass}" title="${escapeHtml(tooltip)}" aria-label="${escapeHtml(tooltip)}" aria-describedby="${tooltipId}" role="img" tabindex="0"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2.5" y="7.5" width="6" height="6" rx="1.3"></rect><path d="M9 10.5h7"></path><path d="m13.5 7.5 3 3-3 3"></path><rect x="16.5" y="7.5" width="5" height="6" rx="1.3"></rect></svg><span class="dependency-count">${dependencyIds.length}</span><span class="dependency-tooltip" id="${tooltipId}" role="tooltip"><strong>Dependencies</strong><span class="dependency-tooltip-summary">${escapeHtml(`${dependencyText} ${resolutionText}${blockedText}`)}</span><ul class="dependency-tooltip-list">${dependencyListHtml}</ul></span></span>`;
     }
 
     .progress-track {
@@ -1347,7 +1502,7 @@
   <path d="M36 32.5v7M32.5 36h7" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/>
 </svg></div>
         <div>
-          <h1>MyTaskAssistant <span class="version-badge">v3.6.1</span></h1>
+          <h1>MyTaskAssistant <span class="version-badge">v4.0.0</span></h1>
           <p>Personal task manager</p>
         </div>
       </div>
@@ -1457,9 +1612,9 @@
                     <path d="M9 15h6"></path>
                   </svg>
                 </th>
-                <th><button class="sort-header" type="button" data-sort-key="dueDate">Due Date <span class="sort-indicator" aria-hidden="true"></span></button></th>
+                <th><button class="sort-header" type="button" data-sort-key="dueDate">Due <span class="sort-indicator" aria-hidden="true"></span></button></th>
                 <th>Days Remaining</th>
-                <th>Dependencies</th>
+                <th title="Dependencies">Dep?</th>
                 <th>Notes</th>
                 <th>Actions</th>
               </tr>
@@ -1720,7 +1875,8 @@
     function formatHours(value) {
       const hours = Number(value || 0);
       if (!hours) return "—";
-      return Number.isInteger(hours) ? `${hours} hr${hours === 1 ? "" : "s"}` : `${hours} hrs`;
+      const roundedHours = Math.round(hours * 10) / 10;
+      return `${roundedHours.toFixed(1)} hr${roundedHours === 1 ? "" : "s"}`;
     }
 
     function hoursTooltip(task) {
@@ -1734,14 +1890,15 @@
     }
 
     function normalizeTask(task) {
+      task = task && typeof task === "object" ? task : {};
       return {
         id: String(task.id ?? crypto.randomUUID()),
         title: task.title ?? "Untitled task",
         projectId: task.projectId ?? "",
-        status: task.status ?? "Not Started",
-        percentComplete: Number.isFinite(Number(task.percentComplete)) ? Math.max(0, Math.min(100, Number(task.percentComplete))) : 0,
+        status: task.status ?? task.taskStatus ?? "Not Started",
+        percentComplete: Number.isFinite(Number(task.percentComplete ?? task.progress)) ? Math.max(0, Math.min(100, Number(task.percentComplete ?? task.progress))) : 0,
         estimatedHours: (() => {
-          const raw = task.estimatedHours;
+          const raw = task.estimatedHours ?? task.estimatedEffort;
           return raw === "" || raw === null || raw === undefined
             ? null
             : (Number.isFinite(Number(raw)) ? Math.max(0, Number(raw)) : null);
@@ -1779,10 +1936,10 @@
                 : 0);
         })(),
         priorityOrder: Number.isFinite(Number(task.priorityOrder)) ? Math.max(1, Number(task.priorityOrder)) : 999999,
-        dueDate: task.dueDate ?? "",
-        notes: task.notes ?? "",
-        dependsOn: Array.isArray(task.dependsOn) ? task.dependsOn.map(String) : [],
-        parentId: task.parentId ? String(task.parentId) : null,
+        dueDate: task.dueDate ?? task.due ?? task.targetDate ?? "",
+        notes: task.notes ?? task.description ?? task.detail ?? "",
+        dependsOn: Array.isArray(task.dependsOn ?? task.dependencies) ? (task.dependsOn ?? task.dependencies).map(String) : [],
+        parentId: task.parentId ?? task.parentTaskId ? String(task.parentId ?? task.parentTaskId) : null,
         createdAt: task.createdAt ?? new Date().toISOString(),
         updatedAt: task.updatedAt ?? new Date().toISOString()
       };
@@ -2032,7 +2189,7 @@
       const allCanceled = terminals.every(child => child.status === "Canceled");
       const unfinished = terminals.filter(child => !isComplete(child) && child.status !== "Canceled");
       const hasInProgress = unfinished.some(child => child.status === "In Progress");
-      const allBlocked = unfinished.length > 0 && unfinished.every(child => child.status === "Blocked" || child.dependsOn.some(id => !isComplete(data.tasks.find(candidate => candidate.id === id) || {})));
+      const allBlocked = unfinished.length > 0 && unfinished.every(child => child.status === "Blocked" || (Array.isArray(child.dependsOn) && child.dependsOn.some(id => !isComplete(data.tasks.find(candidate => candidate.id === id) || {}))));
       const allDeferred = unfinished.length > 0 && unfinished.every(child => child.status === "Deferred");
       const status = allCompleted ? "Completed" : allCanceled ? "Canceled" : allNotStarted ? "Not Started" : allBlocked && !hasInProgress ? "Blocked" : allDeferred && !hasInProgress ? "Deferred" : "In Progress";
       const validAiTasks = terminals.map(child => validAiHoursSaved(child)).filter(value => value !== null);
@@ -2082,9 +2239,11 @@ Calculated AI Assistance: ${percentage}%`;
       }, {});
       const complete = terminals.filter(child => isComplete(child)).length;
       const blocked = counts.Blocked || 0;
-      const summary = `${rollup.status} · ${complete}/${terminals.length}${blocked ? ` · ${blocked} blocked` : ""}`;
+      const waiting = counts.Waiting || 0;
+      const hasAttentionStatus = blocked > 0 || waiting > 0;
+      const summary = `${rollup.status} · ${complete}/${terminals.length}`;
       const breakdown = Object.entries(counts).map(([status, count]) => `${status}: ${count}`).join("\n");
-      return { summary, tooltip: `Calculated parent status: ${rollup.status}.\n${complete} of ${terminals.length} terminal sub-task${terminals.length === 1 ? " is" : "s are"} complete.${blocked ? `\n${blocked} terminal sub-task${blocked === 1 ? " is" : "s are"} blocked.` : ""}\nOverall progress: ${rollup.percentComplete}%.\n\nStatus details:\n${breakdown}` };
+      return { summary, hasAttentionStatus, tooltip: `Calculated parent status: ${rollup.status}.\n${complete} of ${terminals.length} terminal sub-task${terminals.length === 1 ? " is" : "s are"} complete.${blocked ? `\n${blocked} terminal sub-task${blocked === 1 ? " is" : "s are"} blocked.` : ""}${waiting ? `\n${waiting} terminal sub-task${waiting === 1 ? " is" : "s are"} waiting.` : ""}\nOverall progress: ${rollup.percentComplete}%.\n\nStatus details:\n${breakdown}` };
     }
 
     function hasIncompleteDescendants(task) {
@@ -2285,7 +2444,7 @@ Calculated AI Assistance: ${percentage}%`;
       if (Number.isFinite(Number(task.aiHoursSaved)) && task.terminalCount) {
         const excluded = Number(task.excludedAiTaskCount || 0);
         return {
-          display: `${Number(task.aiHoursSaved).toFixed(2)} h`,
+          display: `${Number(task.aiHoursSaved).toFixed(1)} h`,
           tooltip: `AI Hours Saved: ${Number(task.aiHoursSaved).toFixed(2)} h\n\nCalculated from ${task.validAiTaskCount} terminal sub-task${task.validAiTaskCount === 1 ? "" : "s"}.${excluded ? `\n${excluded} sub-task${excluded === 1 ? " was" : "s were"} excluded because AI-effort information is incomplete.` : ""}`
         };
       }
@@ -2332,9 +2491,43 @@ Calculated AI Assistance: ${percentage}%`;
         : `AI Hours Saved: ${displayedSavedHours.toFixed(2)} h\n\nAI Hours Saved is calculated automatically.\n\nAI Hours Saved =\nEstimated Effort Without AI − Time Spent.\n\nEstimated Effort Without AI: ${estimatedHours.toFixed(2)} h\nActual (Time Spent): ${actualHours.toFixed(2)} h\nAI Assistance: ${assistance}%\n\nCalculation:\n${estimatedHours.toFixed(2)} − ${actualHours.toFixed(2)} = ${displayedSavedHours.toFixed(2)} h\n\nRepresents the estimated productivity gained through meaningful AI assistance.`;
 
       return {
-        display: `${displayedSavedHours.toFixed(2)} h`,
+        display: `${displayedSavedHours.toFixed(1)} h`,
         tooltip
       };
+    }
+
+    function renderDependencyIndicator(task, displayStatus) {
+      const dependencyIds = Array.isArray(task.dependsOn) ? task.dependsOn.filter(Boolean) : [];
+      if (!dependencyIds.length) return "";
+
+      const dependencies = dependencyIds.map(id => data.tasks.find(candidate => String(candidate.id) === String(id)));
+      const unresolvedCount = dependencies.filter(dependency => !dependency).length;
+      const incompleteCount = dependencies.filter(dependency => !dependency || !isComplete(dependency)).length;
+      const allComplete = incompleteCount === 0;
+      const blockedByDependency = incompleteCount > 0 && displayStatus === "Blocked";
+      const stateClass = blockedByDependency
+        ? " is-blocked-by-dependency"
+        : incompleteCount > 0 ? " has-incomplete-dependencies" : "";
+      const dependencyText = `This task depends on ${dependencyIds.length} other task${dependencyIds.length === 1 ? "" : "s"}.`;
+      const resolutionText = allComplete
+        ? "All dependencies are complete."
+        : `${incompleteCount} dependenc${incompleteCount === 1 ? "y remains" : "ies remain"} incomplete.${unresolvedCount ? ` ${unresolvedCount} dependenc${unresolvedCount === 1 ? "y is" : "ies are"} unresolved.` : ""}`;
+      const blockedText = blockedByDependency ? " This task is blocked until its dependencies are completed." : "";
+      const tooltip = `Dependencies\n\n${dependencyText}\n${resolutionText}${blockedText}`;
+      return `<span class="dependency-indicator${stateClass}" title="${escapeHtml(tooltip)}" aria-label="${escapeHtml(tooltip)}" role="img"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2.5" y="7.5" width="6" height="6" rx="1.3"></rect><path d="M9 10.5h7"></path><path d="m13.5 7.5 3 3-3 3"></path><rect x="16.5" y="7.5" width="5" height="6" rx="1.3"></rect></svg><span class="dependency-count">${dependencyIds.length}</span></span>`;
+    }
+
+    function firstNoteLink(notes) {
+      const match = String(notes || "").match(/(?:https?:\/\/|www\.)[^\s<]+/i);
+      if (!match) return "";
+      const link = match[0].replace(/[),.;!?]+$/, "");
+      return link.toLowerCase().startsWith("www.") ? `https://${link}` : link;
+    }
+
+    function taskHierarchyMarker(task) {
+      return hasChildren(task)
+        ? '<span class="task-hierarchy-marker branch" title="Parent task with child tasks" aria-label="Parent task with child tasks"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 21V4"></path><path d="M12 10 6 5"></path><path d="M12 14 18 9"></path><path d="M6 5v-2"></path><path d="M18 9V7"></path><path d="M12 4V2"></path></svg></span>'
+        : '<span class="task-hierarchy-marker leaf" title="Terminal work task with no child tasks" aria-label="Terminal work task with no child tasks"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 4C12 4 5 8 5 15c0 3 2 5 5 5 7 0 10-7 10-16Z"></path><path d="M5 20c3-4 7-7 12-10"></path></svg></span>';
     }
 
     function renderTable() {
@@ -2349,7 +2542,8 @@ Calculated AI Assistance: ${percentage}%`;
       }
 
       $("taskRows").innerHTML = orderedEntries.map(({ task, depth }) => {
-        const blockedBy = task.dependsOn.filter(id => {
+        const dependencyIds = Array.isArray(task.dependsOn) ? task.dependsOn : [];
+        const blockedBy = dependencyIds.filter(id => {
           const dependency = data.tasks.find(t => String(t.id) === String(id));
           return dependency && !isComplete(dependency);
         });
@@ -2357,12 +2551,11 @@ Calculated AI Assistance: ${percentage}%`;
         const rollup = taskRollup(task);
         const displayStatus = rollup ? rollup.status : (blockedBy.length && !isComplete(task) ? "Blocked" : task.status);
         const statusClass = displayStatus.toLowerCase().replaceAll(" ", "-");
-        const dependencies = task.dependsOn.length
-          ? task.dependsOn.map(id => `<span class="dependency-chip">${escapeHtml(taskNameById(id))}</span>`).join("")
-          : '<span class="notes-cell">None</span>';
         const aiHoursSaved = aiHoursSavedDetails(displayTask);
         const parentStatus = rollup ? parentStatusDetails(task, rollup) : null;
         const statusTooltip = parentStatus?.tooltip || "";
+        const dependencyIndicator = renderDependencyIndicator(task, displayStatus);
+        const noteLink = firstNoteLink(task.notes);
 
         return `
           <tr class="task-row" data-task-id="${escapeHtml(task.id)}" data-parent-id="${escapeHtml(task.parentId || "")}">
@@ -2377,6 +2570,7 @@ Calculated AI Assistance: ${percentage}%`;
                   aria-label="Drag ${escapeHtml(task.title)} to change priority"
                 >⋮⋮</button>
                 <span class="priority-badge" title="Priority order">${task.priorityOrder}</span>
+                ${taskHierarchyMarker(task)}
               </div>
             </td>
             <td>
@@ -2389,7 +2583,7 @@ Calculated AI Assistance: ${percentage}%`;
               </div>
             </td>
             <td>${escapeHtml(projectNameById(task.projectId) || "—")}</td>
-            <td><span class="status ${statusClass}" title="${escapeHtml(statusTooltip)}">${escapeHtml(parentStatus?.summary || displayStatus)}</span></td>
+            <td>${parentStatus?.hasAttentionStatus ? `<span class="parent-status-warning" title="${escapeHtml(statusTooltip)}" aria-label="Attention: ${escapeHtml(statusTooltip)}">!</span>` : ""}<span class="status ${statusClass}" title="${escapeHtml(statusTooltip)}">${escapeHtml(parentStatus?.summary || displayStatus)}</span></td>
             <td>
               <div class="progress-row">
                 <div class="progress-track"><div class="progress-fill" style="width:${displayTask.percentComplete}%"></div></div>
@@ -2398,12 +2592,15 @@ Calculated AI Assistance: ${percentage}%`;
             </td>
             <td><span title="${escapeHtml(hoursTooltip(displayTask))}">${escapeHtml(formatHours(displayTask.timeSpent))}</span></td>
             <td>${aiHoursSaved.display ? `<span class="ai-efficiency-value" title="${escapeHtml(aiHoursSaved.tooltip)}">${escapeHtml(aiHoursSaved.display)}</span>` : ""}</td>
-            <td>${escapeHtml(formatDate(task.dueDate))}</td>
+            <td class="due-date-cell">${escapeHtml(formatDate(task.dueDate))}</td>
             <td>${daysLabel(task)}</td>
-            <td><div class="dependency-list">${dependencies}</div></td>
+            <td><div class="dependency-list">${dependencyIndicator}</div></td>
             <td class="notes-cell">${renderTaskNote(task)}</td>
             <td>
               <div class="row-actions" aria-label="Task actions">
+                <button class="icon-btn goto-link-btn" type="button" data-goto-link="${escapeHtml(noteLink)}" ${noteLink ? "" : "disabled"} title="${escapeHtml(noteLink ? `There are link(s) in the notes section. Click to go to: ${noteLink}` : "No links are available in the notes section.")}" aria-label="${escapeHtml(noteLink ? `Go to the first link in notes: ${noteLink}` : "No links are available in the notes section")}">
+                  <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M10.5 13.5 13.5 10.5"></path><path d="M7.5 16.5 5 16.5a3.5 3.5 0 0 1 0-7h3"></path><path d="M16.5 7.5H19a3.5 3.5 0 0 1 0 7h-3"></path></svg>
+                </button>
                 <button class="icon-btn" type="button" data-clone-id="${escapeHtml(task.id)}" title="Clone Task" aria-label="Clone Task">
                   <svg viewBox="0 0 24 24" aria-hidden="true">
                     <path d="M6 3.75h8.5L18 7.25V20.25H6z"></path>
@@ -2443,6 +2640,21 @@ Calculated AI Assistance: ${percentage}%`;
       }).join("");
 
       requestAnimationFrame(updateTruncatedNoteControls);
+      document.querySelectorAll(".dependency-indicator").forEach(indicator => {
+        const tooltip = indicator.querySelector(".dependency-tooltip");
+        if (!tooltip) return;
+        const showTooltip = () => {
+          const rect = indicator.getBoundingClientRect();
+          tooltip.style.display = "block";
+          tooltip.style.left = `${Math.max(8, Math.min(rect.left, window.innerWidth - tooltip.offsetWidth - 8))}px`;
+          tooltip.style.top = `${Math.max(8, rect.top - tooltip.offsetHeight - 8)}px`;
+        };
+        const hideTooltip = () => { tooltip.style.display = "none"; };
+        indicator.addEventListener("mouseenter", showTooltip);
+        indicator.addEventListener("mouseleave", hideTooltip);
+        indicator.addEventListener("focus", showTooltip);
+        indicator.addEventListener("blur", hideTooltip);
+      });
 
       document.querySelectorAll("[data-task-id]").forEach(row => {
         row.addEventListener("dblclick", () => openTaskDialog(row.dataset.taskId));
@@ -2473,6 +2685,13 @@ Calculated AI Assistance: ${percentage}%`;
 
       document.querySelectorAll("[data-edit-id]").forEach(button => {
         button.addEventListener("click", () => openTaskDialog(button.dataset.editId));
+      });
+
+      document.querySelectorAll("[data-goto-link]").forEach(button => {
+        button.addEventListener("click", () => {
+          const url = button.dataset.gotoLink;
+          if (url) window.open(url, "_blank", "noopener,noreferrer");
+        });
       });
 
       document.querySelectorAll("[data-delete-id]").forEach(button => {
@@ -2547,12 +2766,22 @@ Calculated AI Assistance: ${percentage}%`;
         });
         const file = await fileHandle.getFile();
         const parsed = JSON.parse(await file.text());
-        data = { metadata: parsed.metadata ?? {}, projects: Array.isArray(parsed.projects) ? parsed.projects : [], tasks: Array.isArray(parsed.tasks) ? parsed.tasks : [] };
+        const legacyTasks = Array.isArray(parsed) ? parsed : (parsed.tasks ?? parsed.taskList ?? parsed.items ?? []);
+        const legacyProjects = Array.isArray(parsed?.projects) ? parsed.projects : (Array.isArray(parsed?.projectList) ? parsed.projectList : []);
+        if (!Array.isArray(legacyTasks)) throw new Error("No task array was found. Expected tasks, taskList, items, or a top-level array.");
+        data = {
+          metadata: parsed?.metadata ?? parsed?.meta ?? {},
+          projects: legacyProjects,
+          tasks: legacyTasks.map(normalizeTask)
+        };
         $("fileStatusTitle").textContent = file.name;
         $("fileStatusText").textContent = "Connected. Changes can be saved directly to this JSON file.";
         render();
       } catch (error) {
-        if (error.name !== "AbortError") alert("Unable to open the JSON file.");
+        if (error.name !== "AbortError") {
+          console.error("Unable to open task file.", error);
+          alert(`Unable to open the task file. ${error.message || "Check that the file contains valid MyTaskAssistant task data."}`);
+        }
       }
     }
 
@@ -2565,7 +2794,7 @@ Calculated AI Assistance: ${percentage}%`;
         ...(data.metadata || {}),
         application: "MyTaskAssistant",
         schemaVersion: "1.0",
-        applicationVersion: "v3.6.1",
+        applicationVersion: "v4.0.0",
         updatedAt: new Date().toISOString()
       };
       const writable = await fileHandle.createWritable();
@@ -2603,7 +2832,7 @@ Calculated AI Assistance: ${percentage}%`;
       const payload = {
         exportType: "current-view",
         exportedAt: new Date().toISOString(),
-        applicationVersion: "v3.6.1",
+        applicationVersion: "v4.0.0",
         filters: currentFilterSnapshot(),
         taskCount: visibleTasks.length,
         projects: data.projects.filter(project => referencedProjectIds.includes(project.id)),

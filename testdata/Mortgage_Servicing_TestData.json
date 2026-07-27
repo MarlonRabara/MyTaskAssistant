@@ -2,9 +2,9 @@
   "metadata": {
     "application": "MyTaskAssistant",
     "schemaVersion": "1.0",
-    "applicationVersion": "v3.5.4",
+    "applicationVersion": "v3.6.3",
     "createdAt": "2026-07-27T12:04:00.4019935-07:00",
-    "updatedAt": "2026-07-27T19:15:07.933Z",
+    "updatedAt": "2026-07-27T22:31:58.949Z",
     "fixturePurpose": "Synthetic QA fixture for mortgage, servicing, technology, filtering, rollups, AI analysis, and weekly timesheet validation."
   },
   "projects": [
@@ -238,10 +238,12 @@
       "priorityOrder": 2,
       "dueDate": "2026-08-11",
       "notes": "Build, configure, test, and instrument the required service or workflow change. Scenario: Mortgage Origination Platform, workstream 3. Include mortgage policy, servicing operations, and technology-team coordination. Validate exception paths, audit evidence, handoffs, production support, and stakeholder communications. AI provided limited assistance for summarization and test-case refinement; most work remained manual. This intentionally detailed note tests the five-line grid preview, ...(see more) behavior, and the expandable Notes editor.",
-      "dependsOn": [],
+      "dependsOn": [
+        "task-child-1-1"
+      ],
       "parentId": "task-parent-3",
       "createdAt": "2026-07-19T11:00:00.0000000-07:00",
-      "updatedAt": "2026-07-27T12:04:00.4019935-07:00"
+      "updatedAt": "2026-07-27T20:02:19.926Z"
     },
     {
       "id": "task-child-3-3",

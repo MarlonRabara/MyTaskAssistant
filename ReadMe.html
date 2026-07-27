@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>MyTaskAssistant v3.6.1 – User Guide</title>
+  <title>MyTaskAssistant v4.0.0 – User Guide</title>
   <style>
     :root {
       --bg: #eef2f7;
@@ -403,7 +403,7 @@
             monitoring AI-assisted productivity, and producing weekly HTML timesheets.
           </p>
         </div>
-        <div class="version">v3.6.1</div>
+        <div class="version">v4.0.0</div>
       </div>
 
       <div class="hero-grid">
@@ -458,6 +458,10 @@
                 <td><code>YourTasks.json</code></td>
                 <td>Your task data. The user chooses the filename when creating or saving a working file.</td>
               </tr>
+              <tr>
+                <td><code>testdata/Mortgage_Servicing_TestData.json</code></td>
+                <td>Synthetic mortgage, servicing, analytics, and technology test data for validating task hierarchy, reports, AI productivity, dependencies, dates, and long notes.</td>
+              </tr>
             </tbody>
           </table>
           <div class="callout warning">
@@ -509,7 +513,7 @@
             </div>
             <div class="card">
               <h3>Task grid</h3>
-              <p>Review project, task, status, progress, time, AI hours saved, due dates, dependencies, notes, and actions.</p>
+              <p>Review project, task, status, progress, time, AI hours saved, due dates, dependencies, notes, and actions. Hours and AI Hours Saved display to one decimal place; use the horizontal scrollbar when the table exceeds the available width.</p>
             </div>
           </div>
           <h3>Common row actions</h3>
@@ -517,6 +521,7 @@
             <thead><tr><th>Action</th><th>What it does</th></tr></thead>
             <tbody>
               <tr><td>Complete checkbox</td><td>Marks a task completed and sets progress to 100%. Completion requires Estimated Hours and Time Spent greater than zero and follows the same AI validation as saving. Parent tasks also require all child and nested-child tasks to be completed.</td></tr>
+              <tr><td>Goto Link</td><td>Available in blue when Notes contains a hyperlink. Opens the first Notes link in a new window; disabled when no link is available.</td></tr>
               <tr><td>Clone</td><td>Creates a copy of the selected task for reuse.</td></tr>
               <tr><td>Create child task</td><td>Adds a subtask beneath the selected parent task.</td></tr>
               <tr><td>Edit</td><td>Opens the full task editor.</td></tr>
@@ -564,6 +569,9 @@
             A child task belongs beneath a parent task. Use the child-task icon on a row or select a parent in the task editor.
             Reordering is limited to tasks at the same hierarchy level.
           </p>
+           <p>
+             The Priority area identifies hierarchy at a glance: a green leaf marks a terminal work task with no children, while a brown branch marks a parent task with child tasks.
+           </p>
 
            <h3>Notes</h3>
            <p>
@@ -589,6 +597,9 @@
             Dependencies identify tasks that should be completed first. They are informational and help users understand sequencing;
             they do not automatically prevent completion.
           </p>
+           <p>
+             The compact <b>Dep?</b> column displays an embedded dependency icon and count only when dependencies exist. Hover or focus it to see every dependency task, its current status, completion state, unresolved references, and whether the current task is blocked.
+           </p>
 
           <h3>Completion</h3>
           <p>
@@ -678,9 +689,9 @@
 
         <section id="saving">
           <h2>Opening, saving, and backing up JSON</h2>
-          <h3>Open JSON</h3>
+          <h3>Load Tasks</h3>
           <p>
-            Select <b>Open JSON</b> and choose a MyTaskAssistant data file. The application normalizes supported older fields when loading.
+            Select <b>Load Tasks</b> and choose a MyTaskAssistant data file. The application normalizes supported legacy containers and fields when loading, including top-level task arrays and common older effort, status, progress, due-date, notes, dependency, and parent aliases.
           </p>
 
           <h3>Save</h3>
@@ -932,7 +943,7 @@
     </div>
 
     <footer class="footer">
-      MyTaskAssistant v3.6.1 · Standalone local-first application guide · Generated for distribution with the application package
+      MyTaskAssistant v4.0.0 · Standalone local-first application guide · Generated for distribution with the application package
     </footer>
   </div>
 </body>

@@ -1,5 +1,5 @@
 # MyTaskAssistant Specification
-**Application Version:** v3.6.1  
+**Application Version:** v4.0.0  
 **Last Updated:** 2026-07-23
 
 ## Overview
@@ -86,26 +86,26 @@ Unlimited hierarchy is supported using `parentId`.
 
 ## Parent Task Rollups and Completion
 
-Tasks with one or more direct child tasks are parent tasks. The application calculates parent values from all descendant tasks, including nested descendants. Calculated values are displayed dynamically and are not persisted as duplicate rollup data.
+Tasks with one or more direct child tasks are parent tasks. The application calculates parent values from terminal descendants only: a terminal task has no children. Intermediate parent values and stored direct parent values are excluded from rollups, which prevents double counting. Calculated values are displayed dynamically and are not persisted as duplicate rollup data.
 
-For a parent task, these editor fields are read-only and show the sum of descendant values:
+For a parent task, these editor fields are read-only and show calculated terminal-descendant values:
 
 - `estimatedHours`
 - `timeSpent`
 - `estimatedEffortWithoutAI`
 
-`aiAssistancePercentage` is also read-only for a parent. It is calculated as the Estimated Effort Without AI-weighted average of descendant AI Assistance percentages:
+`percentComplete`, `status`, and `aiAssistancePercentage` are also read-only for a parent. Progress is Estimated Hours-weighted when every terminal descendant has Estimated Hours; otherwise it uses a task-count average. Parent AI Assistance is calculated as the Estimated Effort Without AI-weighted average of terminal descendant AI Assistance percentages with a positive Estimated Effort Without AI value:
 
 ```text
 Σ (child AI Assistance % × child Estimated Effort Without AI)
 ÷ Σ child Estimated Effort Without AI
 ```
 
-The parent slider tooltip identifies the number of included descendants, total Estimated Effort Without AI, formula, and calculated percentage.
+The parent slider tooltip identifies the number of included terminal tasks, total Estimated Effort Without AI, formula, and calculated percentage. Missing numeric values contribute zero to summed rollups.
 
-Parent rows use the calculated Time Spent and AI Hours Saved values. The parent task's direct stored values remain unchanged when the parent is saved.
+Parent rows use calculated Estimated Hours, Time Spent, Estimated Effort Without AI, AI Assistance, AI Hours Saved, Percent Complete, and Status. Parent AI Hours Saved is the sum of individually valid terminal-task AI Hours Saved values; incomplete AI data is excluded and identified in the tooltip. Parent status is derived from terminal statuses and shown as a compact summary, such as `In Progress · 1/3`, with a detailed tooltip. Parent direct stored values remain unchanged when the parent is saved and become editable again if all children are removed.
 
-A parent task cannot be marked `Completed` until every descendant task is complete. This is enforced through the task-row completion checkbox, the task-editor Mark Complete actions, and saving the parent with status `Completed`.
+A parent task cannot be marked `Completed` until every terminal descendant task is complete. This is enforced through the task-row completion checkbox, the task-editor Mark Complete actions, and saving the parent with status `Completed` or 100% progress. The parent completion controls are disabled while terminal work remains incomplete and direct the user to the Sub-Tasks tab.
 
 ## AI Productivity Fields
 
@@ -423,6 +423,21 @@ Supports:
 - Full JSON Save
 - Export Active
 - Export Current View
+
+## Legacy Import Compatibility
+
+Load Tasks accepts task arrays from `tasks`, `taskList`, `items`, or a top-level JSON array. It accepts project arrays from `projects` or `projectList`.
+
+The importer normalizes common legacy aliases before rendering:
+
+- `taskStatus` → `status`; `progress` → `percentComplete`; `estimatedEffort` → `estimatedHours`
+- `hoursSpent` or `actualEffort` → `timeSpent`
+- `estimatedHumanOnlyEffort` or `estimatedHumanEffort` → `estimatedEffortWithoutAI`
+- `percentageOfAIAssistance` → `aiAssistancePercentage`
+- `due` or `targetDate` → `dueDate`; `description` or `detail` → `notes`
+- `dependencies` → `dependsOn`; `parentTaskId` → `parentId`
+
+Missing optional values are normalized safely. Saving writes the current schema only.
 
 ## Export Current View
 
@@ -849,3 +864,35 @@ This permits time spent on blocked, deferred, canceled, or otherwise interrupted
 
 - Parent rows use the compact status format `Status · completed/terminal`, for example `In Progress · 1/3`.
 - The parent status tooltip expands the compact value into plain language, including completed and blocked terminal task counts, calculated progress, and the per-status breakdown.
+
+
+## v3.6.2 Dependency Detail and Responsive Task Grid
+
+- Dependency indicators provide a detailed hover/focus overlay listing every dependency item, its current status, and any unresolved dependency references.
+- The task grid constrains its workspace and exposes horizontal overflow when the browser viewport is narrower than the task table.
+
+
+## v3.6.3 Task-Row Action Ordering
+
+- The Goto Link action is the first task-row action and uses the accent-blue active state when a Notes hyperlink is available.
+- Clone Task and Create Child Task are adjacent actions.
+
+
+## v4.0.0 Consolidated Task-Management Release
+
+- Promoted the source-controlled standalone application to the v4.0.0 feature baseline.
+- Main task rows include a green leaf for terminal work tasks and a brown branch for parent tasks beside the priority number.
+- The Actions area is ordered Goto Link, Clone Task, Create Child Task, Edit, and Delete. Goto Link is blue when Notes contains a link, disabled otherwise, and opens the first Notes hyperlink in a new window.
+- The `Dep?` column uses an embedded SVG dependency indicator with a count badge. Its hover/focus detail reports dependency totals, satisfaction/blocking state, unresolved references, and each dependency task/status.
+- Notes preview up to five lines in task rows. Longer notes expose a bold `...(see more)` editor shortcut; the editor supports Expand Notes / Collapse Notes.
+- Load Tasks uses non-technical language, detailed toolbar tooltips, and expanded legacy JSON compatibility.
+- The task grid supports horizontal scrolling whenever its columns exceed the available content area.
+- Parent rollups, Timesheet, and AI Analysis use terminal tasks only, preventing duplicate report totals.
+
+### v4.0.0 Final Grid Presentation and Test Fixture Details
+
+- The task-row Hours and AI Hours Saved values are displayed to one decimal place. Stored task values and editor fields retain their full precision.
+- AI Hours Saved uses standard font weight rather than emphasis and is constrained to a single line in the task grid.
+- The due-date column is labeled `Due`; its values retain the standard task-grid font size.
+- The task-grid horizontal scrollbar is available whenever the table exceeds the workspace width, including when the left navigation remains visible.
+- The synthetic test fixture is `testdata/Mortgage_Servicing_TestData.json`. It provides five mortgage, servicing, analytics, and technology projects; parent/child hierarchy; dependencies; long notes; statuses; varied AI productivity; and dates spanning last week, this week, next week, and next month.
