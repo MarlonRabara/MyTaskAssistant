@@ -1,6 +1,6 @@
 # MyTaskAssistant
 
-**Version:** v3.5.2
+**Version:** v3.5.3
 
 A local-first, single-file task manager for organizing projects, tracking effort, monitoring AI-assisted productivity, and producing weekly HTML timesheets. No installation, no backend, no database, no account — just open one HTML file in a modern browser.
 
@@ -16,6 +16,7 @@ A local-first, single-file task manager for organizing projects, tracking effort
 ## Key Features
 
 - **Projects and tasks** — organize tasks by project, with subtasks, parent/child relationships, cloning, statuses, priorities, and due dates.
+- **Parent task rollups** — parent Estimated Hours, Time Spent, and Estimated Effort Without AI are read-only sums of all child and nested-child tasks. Parent AI Assistance is a read-only Estimated Effort Without AI-weighted average. A parent cannot be completed until every child and nested child is complete.
 - **Filters and views** — search, project/status/due-date filters, Active/Completed/Overdue navigation, and hide-completed toggle.
 - **Time and AI productivity tracking** — per task, capture:
   - `estimatedHours` — your original estimate
@@ -23,7 +24,7 @@ A local-first, single-file task manager for organizing projects, tracking effort
   - `aiAssistancePercentage` — how much AI assisted (0–100%)
   - `estimatedEffortWithoutAI` — hours the task would have taken without AI
 - **AI Hours Saved** — computed as `estimatedEffortWithoutAI − timeSpent`; MyTaskAssistant measures AI *productivity*, not AI usage.
-- **🤖 AI Analysis** — a read-only weekly view summarizing AI-assisted tasks: Time Spent, AI %, Estimated Effort Without AI, and AI Hours Saved, with totals and a downloadable standalone HTML report.
+- **🤖 AI Analysis** — a read-only weekly view summarizing AI-assisted tasks: Time Spent, Estimated Effort Without AI, and AI Hours Saved, with totals and a downloadable standalone HTML report.
 - **Weekly Timesheet** — generate a printable, standalone HTML timesheet for any Sunday-through-Saturday week with editable daily allocations.
 - **JSON exports** — export the current filtered view or all active tasks as JSON.
 

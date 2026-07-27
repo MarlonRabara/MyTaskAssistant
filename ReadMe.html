@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>MyTaskAssistant v3.5.2 – User Guide</title>
+  <title>MyTaskAssistant v3.5.3 – User Guide</title>
   <style>
     :root {
       --bg: #eef2f7;
@@ -403,7 +403,7 @@
             monitoring AI-assisted productivity, and producing weekly HTML timesheets.
           </p>
         </div>
-        <div class="version">v3.5.2</div>
+        <div class="version">v3.5.3</div>
       </div>
 
       <div class="hero-grid">
@@ -516,7 +516,7 @@
           <table>
             <thead><tr><th>Action</th><th>What it does</th></tr></thead>
             <tbody>
-              <tr><td>Complete checkbox</td><td>Marks a task completed and sets progress to 100%.</td></tr>
+              <tr><td>Complete checkbox</td><td>Marks a task completed and sets progress to 100%. Parent tasks can be completed only after all child and nested-child tasks are completed.</td></tr>
               <tr><td>Clone</td><td>Creates a copy of the selected task for reuse.</td></tr>
               <tr><td>Create child task</td><td>Adds a subtask beneath the selected parent task.</td></tr>
               <tr><td>Edit</td><td>Opens the full task editor.</td></tr>
@@ -565,6 +565,14 @@
             Reordering is limited to tasks at the same hierarchy level.
           </p>
 
+           <h3>Parent task rollups</h3>
+           <p>
+             When a task has child tasks, its Estimated Hours, Time Spent, and Estimated Effort Without AI are read-only values calculated as the sum of all child and nested-child task values. The parent row uses the calculated Time Spent and AI Hours Saved values.
+           </p>
+           <p>
+             A parent AI Assistance slider is also read-only. Its value is an Estimated Effort Without AI-weighted average of descendant AI Assistance percentages. Hover over the disabled slider for the formula, included task count, total Estimated Effort Without AI, and calculated percentage.
+           </p>
+
           <h3>Dependencies</h3>
           <p>
             Dependencies identify tasks that should be completed first. They are informational and help users understand sequencing;
@@ -574,7 +582,7 @@
           <h3>Completion</h3>
           <p>
             A task is treated as complete when its status is <b>Completed</b> or its progress reaches 100%.
-            The task editor provides both upper and lower action buttons for convenience.
+             A parent task cannot be marked complete until all child and nested-child tasks are complete. This rule applies to the checkbox, the task editor's Mark Complete actions, and saving a Completed status. The task editor provides both upper and lower action buttons for convenience.
           </p>
         </section>
 
@@ -900,7 +908,7 @@
     </div>
 
     <footer class="footer">
-      MyTaskAssistant v3.5.2 · Standalone local-first application guide · Generated for distribution with the application package
+      MyTaskAssistant v3.5.3 · Standalone local-first application guide · Generated for distribution with the application package
     </footer>
   </div>
 </body>

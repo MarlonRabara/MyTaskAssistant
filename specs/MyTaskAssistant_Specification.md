@@ -1,5 +1,5 @@
 # MyTaskAssistant Specification
-**Application Version:** v3.5.2  
+**Application Version:** v3.5.3  
 **Last Updated:** 2026-07-23
 
 ## Overview
@@ -83,6 +83,29 @@ Each task contains:
 - `updatedAt`
 
 Unlimited hierarchy is supported using `parentId`.
+
+## Parent Task Rollups and Completion
+
+Tasks with one or more direct child tasks are parent tasks. The application calculates parent values from all descendant tasks, including nested descendants. Calculated values are displayed dynamically and are not persisted as duplicate rollup data.
+
+For a parent task, these editor fields are read-only and show the sum of descendant values:
+
+- `estimatedHours`
+- `timeSpent`
+- `estimatedEffortWithoutAI`
+
+`aiAssistancePercentage` is also read-only for a parent. It is calculated as the Estimated Effort Without AI-weighted average of descendant AI Assistance percentages:
+
+```text
+Σ (child AI Assistance % × child Estimated Effort Without AI)
+÷ Σ child Estimated Effort Without AI
+```
+
+The parent slider tooltip identifies the number of included descendants, total Estimated Effort Without AI, formula, and calculated percentage.
+
+Parent rows use the calculated Time Spent and AI Hours Saved values. The parent task's direct stored values remain unchanged when the parent is saved.
+
+A parent task cannot be marked `Completed` until every descendant task is complete. This is enforced through the task-row completion checkbox, the task-editor Mark Complete actions, and saving the parent with status `Completed`.
 
 ## AI Productivity Fields
 
@@ -736,3 +759,11 @@ This permits time spent on blocked, deferred, canceled, or otherwise interrupted
 - AI Hours Saved per task is `estimatedEffortWithoutAI - timeSpent` and is never stored.
 - The analysis can be downloaded as a standalone HTML file named `AI_Analysis_<weekStart>_to_<weekEnd>.html`.
 - Source-controlled files (`MyTaskAssistant.html`, `specs/MyTaskAssistant_Specification.md`, `ReadMe.html`, `ReadMe.md`) are now updated in place; version-suffixed filename copies are no longer generated.
+
+
+## v3.5.3 Parent Task Rollups and Completion Guard
+
+- Parent tasks calculate their displayed Estimated Hours, Time Spent, and Estimated Effort Without AI as sums of all descendant tasks.
+- Parent AI Assistance is read-only and displayed as an Estimated Effort Without AI-weighted average of descendant AI Assistance percentages.
+- Parent task rows use the calculated Time Spent and AI Hours Saved values.
+- A parent cannot be completed until all descendant tasks are complete, regardless of whether completion is attempted from the row checkbox, the task editor, or a saved `Completed` status.
