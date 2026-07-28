@@ -31,19 +31,6 @@
       --radius-sm: 10px;
     }
 
-    function firstNoteLink(notes) {
-      const match = String(notes || "").match(/(?:https?:\/\/|www\.)[^\s<]+/i);
-      if (!match) return "";
-      const link = match[0].replace(/[),.;!?]+$/, "");
-      return link.toLowerCase().startsWith("www.") ? `https://${link}` : link;
-    }
-
-    function taskHierarchyMarker(task) {
-      return hasChildren(task)
-        ? '<span class="task-hierarchy-marker branch" title="Parent task with child tasks" aria-label="Parent task with child tasks"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 21V4"></path><path d="M12 10 6 5"></path><path d="M12 14 18 9"></path><path d="M6 5v-2"></path><path d="M18 9V7"></path><path d="M12 4V2"></path></svg></span>'
-        : '<span class="task-hierarchy-marker leaf" title="Terminal work task with no child tasks" aria-label="Terminal work task with no child tasks"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 4C12 4 5 8 5 15c0 3 2 5 5 5 7 0 10-7 10-16Z"></path><path d="M5 20c3-4 7-7 12-10"></path></svg></span>';
-    }
-
     .task-hierarchy-marker {
       display: inline-flex;
       align-items: center;
@@ -642,36 +629,6 @@
       grid-template-columns: 70px 38px;
       align-items: center;
       gap: 8px;
-    }
-
-    function renderDependencyIndicator(task, displayStatus) {
-      const dependencyIds = Array.isArray(task.dependsOn) ? task.dependsOn.filter(Boolean) : [];
-      if (!dependencyIds.length) return "";
-
-      const dependencies = dependencyIds.map(id => data.tasks.find(candidate => String(candidate.id) === String(id)));
-      const unresolvedCount = dependencies.filter(dependency => !dependency).length;
-      const incompleteCount = dependencies.filter(dependency => !dependency || !isComplete(dependency)).length;
-      const allComplete = incompleteCount === 0;
-      const blockedByDependency = incompleteCount > 0 && displayStatus === "Blocked";
-      const stateClass = blockedByDependency
-        ? " is-blocked-by-dependency"
-        : incompleteCount > 0 ? " has-incomplete-dependencies" : "";
-      const dependencyText = `This task depends on ${dependencyIds.length} other task${dependencyIds.length === 1 ? "" : "s"}.`;
-      const resolutionText = allComplete
-        ? "All dependencies are complete."
-        : `${incompleteCount} dependenc${incompleteCount === 1 ? "y remains" : "ies remain"} incomplete.${unresolvedCount ? ` ${unresolvedCount} dependenc${unresolvedCount === 1 ? "y is" : "ies are"} unresolved.` : ""}`;
-      const blockedText = blockedByDependency ? " This task is blocked until its dependencies are completed." : "";
-      const dependencyList = dependencies.map((dependency, index) =>
-        dependency
-          ? `• ${dependency.title || dependency.id} — ${isComplete(dependency) ? "Completed" : (dependency.status || "Not Started")}`
-          : `• ${dependencyIds[index]} — Unresolved dependency`
-      ).join("\n");
-      const tooltip = `Dependencies\n\n${dependencyText}\n${resolutionText}${blockedText}\n\nDependency items:\n${dependencyList}`;
-      const tooltipId = `dependency-tooltip-${String(task.id).replace(/[^a-zA-Z0-9_-]/g, "-")}`;
-      const dependencyListHtml = dependencies.map((dependency, index) =>
-        `<li>${escapeHtml(dependency ? `${dependency.title || dependency.id} — ${isComplete(dependency) ? "Completed" : (dependency.status || "Not Started")}` : `${dependencyIds[index]} — Unresolved dependency`)}</li>`
-      ).join("");
-      return `<span class="dependency-indicator${stateClass}" title="${escapeHtml(tooltip)}" aria-label="${escapeHtml(tooltip)}" aria-describedby="${tooltipId}" role="img" tabindex="0"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2.5" y="7.5" width="6" height="6" rx="1.3"></rect><path d="M9 10.5h7"></path><path d="m13.5 7.5 3 3-3 3"></path><rect x="16.5" y="7.5" width="5" height="6" rx="1.3"></rect></svg><span class="dependency-count">${dependencyIds.length}</span><span class="dependency-tooltip" id="${tooltipId}" role="tooltip"><strong>Dependencies</strong><span class="dependency-tooltip-summary">${escapeHtml(`${dependencyText} ${resolutionText}${blockedText}`)}</span><ul class="dependency-tooltip-list">${dependencyListHtml}</ul></span></span>`;
     }
 
     .progress-track {
