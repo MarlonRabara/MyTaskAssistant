@@ -513,7 +513,7 @@
             </div>
             <div class="card">
               <h3>Task grid</h3>
-              <p>Review project, task, status, progress, time, AI hours saved, due dates, dependencies, notes, and actions. Hours and AI Hours Saved display to one decimal place; use the horizontal scrollbar when the table exceeds the available width.</p>
+              <p>Review project, task, status, progress, time, AI hours saved, due dates, completion dates, dependencies, notes, and actions. Hours and AI Hours Saved display to one decimal place; use the horizontal scrollbar when the table exceeds the available width.</p>
             </div>
           </div>
           <h3>Common row actions</h3>
@@ -558,7 +558,7 @@
           <h3>Creating a task</h3>
           <div class="steps">
             <div class="step"><strong>Select Add Task</strong>Open the task editor from the upper-right action bar.</div>
-            <div class="step"><strong>Enter the essentials</strong>Provide a title, project, status, progress, priority, and due date as needed.</div>
+            <div class="step"><strong>Enter the essentials</strong>Provide a title, project, status, progress, priority, due date, and completion date as needed.</div>
             <div class="step"><strong>Track work</strong>Enter Time Spent, Estimated Effort Without AI, and AI Assistance when applicable.</div>
             <div class="step"><strong>Add relationships</strong>Choose a parent task for hierarchy and dependency tasks for sequencing.</div>
             <div class="step"><strong>Save</strong>The dialog closes and the task grid refreshes.</div>
@@ -580,6 +580,9 @@
            <p>
              The task editor opens on <b>Task Detail</b>, which uses the full-width two-column form. For a saved parent task, select the adjacent <b>Sub-Tasks</b> tab to replace the detail form with full-width rows for direct child tasks. Each row shows the child title, status, and Time Spent; select a row to load that child into the same task editor window.
            </p>
+            <p>
+              Below <b>Percentage of AI assistance</b>, the editor groups Parent Task above Dependencies on the left and Due Date above Completed Date on the right. Priority order is directly above Notes. Time Spent and Estimated Effort Without AI are aligned side by side with equal-height controls.
+            </p>
 
            <h3>Parent task rollups</h3>
            <p>
@@ -609,6 +612,9 @@
            <p>
              Status and progress stay synchronized: setting progress to <b>100%</b> automatically sets Status to <b>Completed</b>, and setting Status to <b>Completed</b> automatically sets progress to <b>100%</b>. Saving does not permit a mismatched completed state.
            </p>
+            <p>
+              The editable <b>Completed date</b> records when work finished. A missing date is set to today when a task becomes Completed, while changing to any non-completed status clears it. Entering a completion date that is today or earlier automatically sets Status to Completed and progress to 100%.
+            </p>
            <p>
              A task with progress greater than <b>0%</b> cannot be saved with Status set to <b>Not Started</b>. Select an active status before recording progress.
            </p>
@@ -756,8 +762,8 @@
           <p>A task is included when all of the following are true:</p>
           <ul class="checklist">
             <li>Time Spent is greater than zero.</li>
-            <li>Status is anything except Not Started.</li>
-            <li>The task's due date falls within the selected Sunday-through-Saturday week.</li>
+              <li>The task is a terminal work task with a completion date.</li>
+              <li>The task's completion date falls within the selected Sunday-through-Saturday week.</li>
           </ul>
 
           <h3>Create a timesheet</h3>
@@ -786,7 +792,7 @@
 
           <h3>How initial daily allocation works</h3>
           <p>
-            MyTaskAssistant stores a task's total Time Spent, not a separate time-entry history. For the preview, the total is initially placed on the task's due-date column. Tasks without a due date in the selected week are excluded. Review and edit the daily values before downloading.
+             MyTaskAssistant stores a task's total Time Spent, not a separate time-entry history. For the preview, the total is initially placed on the task's completion-date column. Tasks without a completion date in the selected week are excluded. Review and edit the daily values before downloading.
           </p>
 
           <div class="callout success">
@@ -879,7 +885,7 @@
           <details>
             <summary>The weekly timesheet has no rows</summary>
             <div>
-              Check that tasks have Time Spent greater than zero, are not Not Started, and have a due date within the selected week.
+              Check that terminal tasks have Time Spent greater than zero and a completion date within the selected week.
             </div>
           </details>
 

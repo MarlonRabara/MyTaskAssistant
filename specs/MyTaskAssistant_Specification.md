@@ -78,6 +78,7 @@ Each task contains:
 - `aiAssistancePercentage`
 - `priorityOrder`
 - `dueDate`
+- `completedDate`
 - `notes`
 - `createdAt`
 - `updatedAt`
@@ -152,6 +153,10 @@ Backward compatibility: older JSON files may contain `estimatedHumanOnlyEffort` 
 - Slider step is 5%
 - Defaults to 0%
 - Stored as a whole number
+
+### Task Editor Layout
+
+Below the Percentage of AI Assistance slider, the editor places Parent Task above Dependencies in the left column and Due Date above Completed Date in the right column. Priority order appears immediately above Notes. Time Spent and Estimated Effort Without AI are presented together in aligned columns with equal-height input controls.
 
 ### Validation
 
@@ -376,6 +381,10 @@ Supports:
 - Overdue view
 - Due-date filter
 
+## Parent Context in Main Results
+
+When a child task satisfies the active filters and is therefore visible in the main task-grid results, its parent task must also be shown even when the parent does not satisfy one or more active filters. The parent is contextual only; it does not count as a filter match. Higher ancestors are included recursively when available so the visible child retains its complete hierarchy path. This rule applies to the main task-grid rendering only and does not change the filtered task set used by **Export View**.
+
 ## Due-Date Filter
 
 Available options:
@@ -436,6 +445,8 @@ The importer normalizes common legacy aliases before rendering:
 - `percentageOfAIAssistance` → `aiAssistancePercentage`
 - `due` or `targetDate` → `dueDate`; `description` or `detail` → `notes`
 - `dependencies` → `dependsOn`; `parentTaskId` → `parentId`
+
+When imported data has status `Completed` but no `completedDate`, the importer uses its due date as the completion date when one is available.
 
 Missing optional values are normalized safely. Saving writes the current schema only.
 
@@ -896,3 +907,12 @@ This permits time spent on blocked, deferred, canceled, or otherwise interrupted
 - The due-date column is labeled `Due`; its values retain the standard task-grid font size.
 - The task-grid horizontal scrollbar is available whenever the table exceeds the workspace width, including when the left navigation remains visible.
 - The synthetic test fixture is `testdata/Mortgage_Servicing_TestData.json`. It provides five mortgage, servicing, analytics, and technology projects; parent/child hierarchy; dependencies; long notes; statuses; varied AI productivity; and dates spanning last week, this week, next week, and next month.
+
+
+## v4.1.0 Explicit Completion Dates
+
+- Tasks store an editable `completedDate` in local `YYYY-MM-DD` format. The task grid and task editor display the field.
+- When status is set to `Completed`, a missing completion date is set to the current local date. Setting progress to 100% follows the same completion synchronization.
+- Setting a non-completed status clears `completedDate`.
+- Entering a completion date that is today or earlier automatically sets status to `Completed` and progress to 100%. A completed task may retain a user-edited future completion date.
+- Weekly Timesheet eligibility uses terminal tasks with Time Spent greater than zero and a `completedDate` in the selected Sunday-through-Saturday week. The initial daily allocation places the full Time Spent value on the completion-date column.

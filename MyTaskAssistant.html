@@ -319,6 +319,7 @@
     .field,
     .select {
       width: 100%;
+      height: 40px;
       min-height: 40px;
       border: 1px solid var(--line);
       background: var(--surface-2);
@@ -1092,6 +1093,19 @@
       gap: 16px;
     }
     #taskDetailPanel .form-group.full { grid-column: 1 / -1; }
+    .task-effort-row,
+    .task-relationships-and-dates {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 16px;
+    }
+    .task-effort-row { align-items: start; }
+    .relationship-stack,
+    .date-stack {
+      display: grid;
+      align-content: start;
+      gap: 16px;
+    }
     .subtask-list { display: grid; gap: 8px; }
     .subtask-list button {
       width: 100%;
@@ -1203,6 +1217,8 @@
       .controls { grid-template-columns: 1fr; }
       .dialog-body { grid-template-columns: 1fr; }
       .form-group.full { grid-column: auto; }
+      .task-effort-row,
+      .task-relationships-and-dates { grid-template-columns: 1fr; }
     }
   
 .version-badge{
@@ -1570,6 +1586,7 @@
                   </svg>
                 </th>
                 <th><button class="sort-header" type="button" data-sort-key="dueDate">Due <span class="sort-indicator" aria-hidden="true"></span></button></th>
+                <th>Completed</th>
                 <th>Days Remaining</th>
                 <th title="Dependencies">Dep?</th>
                 <th>Notes</th>
@@ -1677,14 +1694,16 @@
         <label for="estimatedHoursInput">Estimated hours</label>
         <input class="field" id="estimatedHoursInput" type="number" min="0" step="0.25" placeholder="Example: 8.0" />
       </div>
-      <div class="form-group">
-        <label for="taskHoursInput">Time spent (hours)</label>
-        <input class="field" id="taskHoursInput" type="number" min="0" step="0.25" value="0" placeholder="Example: 1.5" />
-      </div>
-      <div class="form-group">
-        <label for="estimatedEffortWithoutAIInput" title="Estimate how long this task would have taken if AI had not been available.&#10;&#10;Required whenever AI Assistance is greater than 0%.&#10;&#10;This value must be greater than Time Spent.">Estimated Effort Without AI (hours)</label>
-        <input class="field" id="estimatedEffortWithoutAIInput" type="number" min="0" step="0.25" placeholder="Example: 8.0" title="Estimate how long this task would have taken if AI had not been available.&#10;&#10;Required whenever AI Assistance is greater than 0%.&#10;&#10;This value must be greater than Time Spent." />
-        <div class="typeahead-helper">Estimate how long this task would have taken if AI had not been available. Required whenever AI Assistance is greater than 0%.</div>
+      <div class="form-group full task-effort-row">
+        <div class="form-group">
+          <label for="taskHoursInput">Time spent (hours)</label>
+          <input class="field" id="taskHoursInput" type="number" min="0" step="0.25" value="0" placeholder="Example: 1.5" />
+        </div>
+        <div class="form-group">
+          <label for="estimatedEffortWithoutAIInput" title="Estimate how long this task would have taken if AI had not been available.&#10;&#10;Required whenever AI Assistance is greater than 0%.&#10;&#10;This value must be greater than Time Spent.">Estimated Effort Without AI (hours)</label>
+          <input class="field" id="estimatedEffortWithoutAIInput" type="number" min="0" step="0.25" placeholder="Example: 8.0" title="Estimate how long this task would have taken if AI had not been available.&#10;&#10;Required whenever AI Assistance is greater than 0%.&#10;&#10;This value must be greater than Time Spent." />
+          <div class="typeahead-helper">Estimate how long this task would have taken if AI had not been available. Required whenever AI Assistance is greater than 0%.</div>
+        </div>
       </div>
       <div class="form-group full ai-slider-group">
         <div class="slider-label-row">
@@ -1694,32 +1713,42 @@
         <input id="percentageOfAIAssistanceInput" type="range" min="0" max="100" step="5" value="0" title="The estimated percentage of work that AI accelerated or meaningfully improved.&#10;&#10;Record AI Assistance only when AI produced measurable productivity gains." />
         <div class="slider-scale" aria-hidden="true"><span>0%</span><span>100%</span></div>
       </div>
-      <div class="form-group">
+      <div class="form-group full task-relationships-and-dates">
+        <div class="relationship-stack">
+          <div class="form-group">
+            <label for="taskParentSearch">Parent task (optional)</label>
+            <div class="typeahead">
+              <input class="field" id="taskParentSearch" type="search" placeholder="Type to find a parent task..." autocomplete="off" />
+              <div class="typeahead-results" id="taskParentResults"></div>
+            </div>
+            <div id="selectedParent"></div>
+            <div class="typeahead-helper">Select one parent task. The current task cannot be its own parent.</div>
+          </div>
+          <div class="form-group">
+            <label for="taskDependencySearch">Dependencies</label>
+            <div class="typeahead">
+              <input class="field" id="taskDependencySearch" type="search" placeholder="Type to add dependencies..." autocomplete="off" />
+              <div class="typeahead-results" id="taskDependencyResults"></div>
+            </div>
+            <div class="selected-list" id="selectedDependencies"></div>
+            <div class="typeahead-helper">You can select multiple tasks. Selected tasks must be completed first.</div>
+          </div>
+        </div>
+        <div class="date-stack">
+          <div class="form-group">
+            <label for="taskDueDateInput">Due date</label>
+            <input class="field" id="taskDueDateInput" type="date" />
+          </div>
+          <div class="form-group">
+            <label for="taskCompletedDateInput">Completed date</label>
+            <input class="field" id="taskCompletedDateInput" type="date" />
+          </div>
+        </div>
+      </div>
+      <div class="form-group full">
         <label for="taskPriorityInput">Priority order</label>
         <input class="field" id="taskPriorityInput" type="number" min="1" step="1" value="1" />
         <div class="typeahead-helper">Lower numbers appear first among tasks at the same level.</div>
-      </div>
-      <div class="form-group">
-        <label for="taskDueDateInput">Due date</label>
-        <input class="field" id="taskDueDateInput" type="date" />
-      </div>
-      <div class="form-group">
-        <label for="taskParentSearch">Parent task (optional)</label>
-        <div class="typeahead">
-          <input class="field" id="taskParentSearch" type="search" placeholder="Type to find a parent task..." autocomplete="off" />
-          <div class="typeahead-results" id="taskParentResults"></div>
-        </div>
-        <div id="selectedParent"></div>
-        <div class="typeahead-helper">Select one parent task. The current task cannot be its own parent.</div>
-      </div>
-      <div class="form-group">
-        <label for="taskDependencySearch">Dependencies</label>
-        <div class="typeahead">
-          <input class="field" id="taskDependencySearch" type="search" placeholder="Type to add dependencies..." autocomplete="off" />
-          <div class="typeahead-results" id="taskDependencyResults"></div>
-        </div>
-        <div class="selected-list" id="selectedDependencies"></div>
-        <div class="typeahead-helper">You can select multiple tasks. Selected tasks must be completed first.</div>
       </div>
       <div class="form-group full">
         <div class="notes-label-row">
@@ -1763,7 +1792,7 @@
           <span class="timesheet-summary-badge">Hours: <strong id="timesheetHoursTotal">0.00</strong></span>
         </div>
       </div>
-      <p class="timesheet-help">Includes tasks in any status except Not Started, with Time Spent greater than zero and a due date within the selected week. Hours may be adjusted before export.</p>
+      <p class="timesheet-help">Includes completed tasks with Time Spent greater than zero and a completed date within the selected week. Hours may be adjusted before export.</p>
       <div class="timesheet-preview-shell">
         <div id="timesheetPreview" class="timesheet-preview">
           <div class="timesheet-empty">Choose a week and generate the preview.</div>
@@ -1848,11 +1877,14 @@
 
     function normalizeTask(task) {
       task = task && typeof task === "object" ? task : {};
+      const status = task.status ?? task.taskStatus ?? "Not Started";
+      const dueDate = task.dueDate ?? task.due ?? task.targetDate ?? "";
+      const completedDate = String(task.completedDate ?? "").slice(0, 10);
       return {
         id: String(task.id ?? crypto.randomUUID()),
         title: task.title ?? "Untitled task",
         projectId: task.projectId ?? "",
-        status: task.status ?? task.taskStatus ?? "Not Started",
+        status,
         percentComplete: Number.isFinite(Number(task.percentComplete ?? task.progress)) ? Math.max(0, Math.min(100, Number(task.percentComplete ?? task.progress))) : 0,
         estimatedHours: (() => {
           const raw = task.estimatedHours ?? task.estimatedEffort;
@@ -1893,7 +1925,8 @@
                 : 0);
         })(),
         priorityOrder: Number.isFinite(Number(task.priorityOrder)) ? Math.max(1, Number(task.priorityOrder)) : 999999,
-        dueDate: task.dueDate ?? task.due ?? task.targetDate ?? "",
+        dueDate,
+        completedDate: status === "Completed" && !completedDate ? dueDate : completedDate,
         notes: task.notes ?? task.description ?? task.detail ?? "",
         dependsOn: Array.isArray(task.dependsOn ?? task.dependencies) ? (task.dependsOn ?? task.dependencies).map(String) : [],
         parentId: task.parentId ?? task.parentTaskId ? String(task.parentId ?? task.parentTaskId) : null,
@@ -1914,6 +1947,26 @@
           seeMore.classList.toggle("visible", preview.scrollHeight > preview.clientHeight + 1);
         }
       });
+    }
+
+    function tasksWithVisibleParents(tasks) {
+      const tasksById = new Map(data.tasks.map(task => [String(task.id), task]));
+      const visibleTasks = new Map(tasks.map(task => [String(task.id), task]));
+      const pendingTasks = [...tasks];
+
+      while (pendingTasks.length) {
+        const task = pendingTasks.pop();
+        const parentId = task?.parentId;
+        if (parentId === null || parentId === undefined || parentId === "") continue;
+
+        const parent = tasksById.get(String(parentId));
+        if (!parent || visibleTasks.has(String(parent.id))) continue;
+
+        visibleTasks.set(String(parent.id), parent);
+        pendingTasks.push(parent);
+      }
+
+      return data.tasks.filter(task => visibleTasks.has(String(task.id)));
     }
 
     function isComplete(task) {
@@ -2082,11 +2135,11 @@
       return depth;
     }
 
-    function mostRecentTasks(tasks) {
+    function mostRecentTasks(tasks, limit = 10) {
       return tasks
         .slice()
         .sort((a, b) => String(b.createdAt || "").localeCompare(String(a.createdAt || "")) || String(b.id).localeCompare(String(a.id)))
-        .slice(0, 10);
+        .slice(0, limit);
     }
 
     function childTasks(parentId) {
@@ -2234,12 +2287,24 @@ Calculated AI Assistance: ${percentage}%`;
     }
 
     function synchronizeCompletionFields(source) {
+      const completedDateInput = $("taskCompletedDateInput");
+      const today = isoDateLocal(new Date());
+
+      if (source === "completedDate" && completedDateInput.value && completedDateInput.value <= today) {
+        $("taskStatusInput").value = "Completed";
+        $("taskProgressInput").value = 100;
+      }
       if (source === "status" && $("taskStatusInput").value === "Completed") {
         $("taskProgressInput").value = 100;
       }
       if (source === "progress" && Number($("taskProgressInput").value || 0) >= 100) {
         $("taskProgressInput").value = 100;
         $("taskStatusInput").value = "Completed";
+      }
+      if ($("taskStatusInput").value !== "Completed") {
+        completedDateInput.value = "";
+      } else if (!completedDateInput.value) {
+        completedDateInput.value = today;
       }
     }
 
@@ -2489,9 +2554,13 @@ Calculated AI Assistance: ${percentage}%`;
 
     function renderTable() {
       updateSortIndicators();
-      const tasks = filteredTasks();
+      const matchedTasks = filteredTasks();
+      const baseTasks = forcedView === "most-recent"
+        ? mostRecentTasks(matchedTasks)
+        : matchedTasks;
+      const tasks = tasksWithVisibleParents(baseTasks);
       const orderedEntries = forcedView === "most-recent"
-        ? mostRecentTasks(tasks).map(task => ({ task, depth: taskDepth(task) }))
+        ? mostRecentTasks(tasks, Number.POSITIVE_INFINITY).map(task => ({ task, depth: taskDepth(task) }))
         : orderedTaskTree(tasks);
       if (!orderedEntries.length) {
         $("taskRows").innerHTML = '<tr><td colspan="12"><div class="empty">No tasks match the current filters.</div></td></tr>';
@@ -2550,6 +2619,7 @@ Calculated AI Assistance: ${percentage}%`;
             <td><span title="${escapeHtml(hoursTooltip(displayTask))}">${escapeHtml(formatHours(displayTask.timeSpent))}</span></td>
             <td>${aiHoursSaved.display ? `<span class="ai-efficiency-value" title="${escapeHtml(aiHoursSaved.tooltip)}">${escapeHtml(aiHoursSaved.display)}</span>` : ""}</td>
             <td class="due-date-cell">${escapeHtml(formatDate(task.dueDate))}</td>
+            <td class="due-date-cell">${escapeHtml(formatDate(task.completedDate))}</td>
             <td>${daysLabel(task)}</td>
             <td><div class="dependency-list">${dependencyIndicator}</div></td>
             <td class="notes-cell">${renderTaskNote(task)}</td>
@@ -2627,6 +2697,7 @@ Calculated AI Assistance: ${percentage}%`;
           }
           task.status = box.checked ? "Completed" : "In Progress";
           task.percentComplete = box.checked ? 100 : Math.min(task.percentComplete, 95);
+          task.completedDate = box.checked ? (task.completedDate || isoDateLocal(new Date())) : "";
           task.updatedAt = new Date().toISOString();
           render();
         });
@@ -2869,7 +2940,7 @@ Calculated AI Assistance: ${percentage}%`;
       $("taskHoursInput").value = displayTask?.timeSpent ?? 0;
       $("estimatedHoursInput").value = displayTask?.estimatedHours ?? "";
       $("estimatedEffortWithoutAIInput").value = displayTask?.estimatedEffortWithoutAI ?? "";
-      ["taskStatusInput", "taskProgressInput", "taskHoursInput", "estimatedHoursInput", "estimatedEffortWithoutAIInput"].forEach(id => {
+      ["taskStatusInput", "taskProgressInput", "taskHoursInput", "estimatedHoursInput", "estimatedEffortWithoutAIInput", "taskCompletedDateInput"].forEach(id => {
         $(id).disabled = hasChildTasks;
         $(id).title = hasChildTasks
           ? "This parent task value is calculated from its child tasks."
@@ -2885,6 +2956,7 @@ Calculated AI Assistance: ${percentage}%`;
       const initialParentId = task?.parentId ?? defaults.parentId ?? null;
       $("taskPriorityInput").value = task?.priorityOrder ?? (siblingTasks(initialParentId).length + 1);
       $("taskDueDateInput").value = task?.dueDate ?? "";
+      $("taskCompletedDateInput").value = task?.completedDate ?? "";
       selectedParentId = initialParentId;
       selectedDependencyIds = Array.isArray(task?.dependsOn) ? [...task.dependsOn] : [];
       $("taskParentSearch").value = "";
@@ -3097,6 +3169,7 @@ Calculated AI Assistance: ${percentage}%`;
       const rollup = existing ? taskRollup(existing) : null;
       const hasChildTasks = Boolean(rollup);
 
+      synchronizeCompletionFields("completedDate");
       synchronizeCompletionFields("status");
       synchronizeCompletionFields("progress");
 
@@ -3145,6 +3218,7 @@ Calculated AI Assistance: ${percentage}%`;
         aiAssistancePercentage: aiAssistanceValue,
         priorityOrder: Math.max(1, Number($("taskPriorityInput").value || (siblingTasks(selectedParentId).length + 1))),
         dueDate: $("taskDueDateInput").value,
+        completedDate: $("taskCompletedDateInput").value,
         parentId: selectedParentId || null,
         dependsOn: [...selectedDependencyIds],
         notes: $("taskNotesInput").value.trim(),
@@ -3262,8 +3336,6 @@ Calculated AI Assistance: ${percentage}%`;
         date.setDate(start.getDate() + index);
         return date;
       });
-    $("taskStatusInput").addEventListener("change", () => synchronizeCompletionFields("status"));
-    $("taskProgressInput").addEventListener("change", () => synchronizeCompletionFields("progress"));
     }
 
     function dateInsideWeek(value, days) {
@@ -3276,7 +3348,7 @@ Calculated AI Assistance: ${percentage}%`;
       return data.tasks
         .filter(task => !hasChildren(task))
         .filter(task => Number(task.timeSpent || 0) > 0)
-        .filter(task => task.status !== "Not Started")
+        .filter(task => task.completedDate)
         .sort((a, b) =>
           projectNameById(a.projectId).localeCompare(projectNameById(b.projectId)) ||
           String(a.title).localeCompare(String(b.title))
@@ -3287,10 +3359,7 @@ Calculated AI Assistance: ${percentage}%`;
       const days = buildWeekDays(selectedDate);
       const rows = timesheetEligibleTasks()
         .map(task => {
-          // Timesheet eligibility is based only on the task due date.
-          // Editing or adding a task later must not move its hours into
-          // the week containing updatedAt.
-          const dayIndex = dateInsideWeek(task.dueDate, days);
+          const dayIndex = dateInsideWeek(task.completedDate, days);
           if (dayIndex < 0) return null;
 
           const dailyHours = Array(7).fill(0);
@@ -3301,7 +3370,7 @@ Calculated AI Assistance: ${percentage}%`;
             projectName: projectNameById(task.projectId) || "No Project",
             taskName: task.title,
             status: task.status,
-            dueDate: task.dueDate,
+            completedDate: task.completedDate,
             dailyHours
           };
         })
@@ -3331,7 +3400,7 @@ Calculated AI Assistance: ${percentage}%`;
       const model = currentTimesheetModel;
 
       if (!model || !model.rows.length) {
-        preview.innerHTML = '<div class="timesheet-empty">No eligible tasks with Time Spent and a due date in the selected week were found.</div>';
+        preview.innerHTML = '<div class="timesheet-empty">No completed tasks with Time Spent and a completed date in the selected week were found.</div>';
         $("timesheetTaskCount").textContent = "0";
         $("timesheetHoursTotal").textContent = "0.00";
         $("downloadTimesheetHtmlBtn").disabled = true;
@@ -3653,6 +3722,9 @@ Calculated AI Assistance: ${percentage}%`;
     $("saveTaskTopBtn").addEventListener("click", saveTaskFromDialog);
     $("markCompleteBtn").addEventListener("click", markTaskCompleteInDialog);
     $("markCompleteTopBtn").addEventListener("click", markTaskCompleteInDialog);
+    $("taskStatusInput").addEventListener("change", () => synchronizeCompletionFields("status"));
+    $("taskProgressInput").addEventListener("change", () => synchronizeCompletionFields("progress"));
+    $("taskCompletedDateInput").addEventListener("change", () => synchronizeCompletionFields("completedDate"));
     $("expandNotesBtn").addEventListener("click", () => {
       const expanded = $("taskNotesInput").classList.toggle("expanded");
       $("expandNotesBtn").textContent = expanded ? "Collapse Notes" : "Expand Notes";
