@@ -42,6 +42,8 @@
     .task-hierarchy-marker svg { width: 17px; height: 17px; }
     .task-hierarchy-marker.leaf { color: #2f855a; }
     .task-hierarchy-marker.branch { color: #8b5a2b; }
+    .task-hierarchy-marker.standalone { color: #2563eb; }
+    .task-hierarchy-marker.standalone svg { width: 18px; height: 18px; }
 
     .goto-link-btn:not(:disabled) { color: var(--accent); }
     .goto-link-btn:not(:disabled):hover { color: var(--accent-2); border-color: color-mix(in srgb, var(--accent) 35%, var(--line)); }
@@ -419,6 +421,23 @@
     .ai-efficiency-header { min-width: 56px; }
 
     .due-date-cell { white-space: nowrap; }
+
+    .due-date-display {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .completion-timing-icon {
+      display: inline-flex;
+      width: 18px;
+      height: 18px;
+      flex: 0 0 18px;
+    }
+
+    .completion-timing-icon.on-time { color: var(--success); }
+    .completion-timing-icon.late { color: var(--danger); }
+    .completion-timing-icon svg { width: 18px; height: 18px; }
 
     .ai-slider-group {
       padding-top: 2px;
@@ -1475,8 +1494,8 @@
   <path d="M36 32.5v7M32.5 36h7" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/>
 </svg></div>
         <div>
-          <h1>MyTaskAssistant <span class="version-badge">v4.0.0</span></h1>
-          <p>Personal task manager</p>
+          <h1>MyTaskAssistant <span class="version-badge">v4.1.0</span></h1>
+          <p>Personal task manager designed by Marlon Rabara</p>
         </div>
       </div>
 
@@ -1586,7 +1605,6 @@
                   </svg>
                 </th>
                 <th><button class="sort-header" type="button" data-sort-key="dueDate">Due <span class="sort-indicator" aria-hidden="true"></span></button></th>
-                <th>Completed</th>
                 <th>Days Remaining</th>
                 <th title="Dependencies">Dep?</th>
                 <th>Notes</th>
@@ -2289,19 +2307,24 @@ Calculated AI Assistance: ${percentage}%`;
     function synchronizeCompletionFields(source) {
       const completedDateInput = $("taskCompletedDateInput");
       const today = isoDateLocal(new Date());
+      const statusInput = $("taskStatusInput");
+      const progressInput = $("taskProgressInput");
 
       if (source === "completedDate" && completedDateInput.value && completedDateInput.value <= today) {
-        $("taskStatusInput").value = "Completed";
-        $("taskProgressInput").value = 100;
+        statusInput.value = "Completed";
+        progressInput.value = 100;
       }
-      if (source === "status" && $("taskStatusInput").value === "Completed") {
-        $("taskProgressInput").value = 100;
+      if (source === "status" && statusInput.value === "Completed") {
+        progressInput.value = 100;
       }
-      if (source === "progress" && Number($("taskProgressInput").value || 0) >= 100) {
-        $("taskProgressInput").value = 100;
-        $("taskStatusInput").value = "Completed";
+      if (source === "progress" && Number(progressInput.value || 0) >= 100) {
+        progressInput.value = 100;
+        statusInput.value = "Completed";
       }
-      if ($("taskStatusInput").value !== "Completed") {
+      if (statusInput.value !== "Completed") {
+        if (Number(progressInput.value || 0) >= 100) {
+          progressInput.value = 99;
+        }
         completedDateInput.value = "";
       } else if (!completedDateInput.value) {
         completedDateInput.value = today;
@@ -2547,9 +2570,30 @@ Calculated AI Assistance: ${percentage}%`;
     }
 
     function taskHierarchyMarker(task) {
-      return hasChildren(task)
-        ? '<span class="task-hierarchy-marker branch" title="Parent task with child tasks" aria-label="Parent task with child tasks"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 21V4"></path><path d="M12 10 6 5"></path><path d="M12 14 18 9"></path><path d="M6 5v-2"></path><path d="M18 9V7"></path><path d="M12 4V2"></path></svg></span>'
-        : '<span class="task-hierarchy-marker leaf" title="Terminal work task with no child tasks" aria-label="Terminal work task with no child tasks"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 4C12 4 5 8 5 15c0 3 2 5 5 5 7 0 10-7 10-16Z"></path><path d="M5 20c3-4 7-7 12-10"></path></svg></span>';
+      if (hasChildren(task)) {
+        const label = `Parent task with ${childTasks(task.id).length} child task(s)`;
+        return `<span class="task-hierarchy-marker branch" title="${escapeHtml(label)}" aria-label="${escapeHtml(label)}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 21V4"></path><path d="M12 10 6 5"></path><path d="M12 14 18 9"></path><path d="M6 5v-2"></path><path d="M18 9V7"></path><path d="M12 4V2"></path></svg></span>`;
+      }
+      if (!task.parentId) {
+        return '<span class="task-hierarchy-marker standalone" title="Standalone task" aria-label="Standalone task"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" role="img" aria-hidden="true"><rect x="6" y="6" width="12" height="12" rx="3" stroke="currentColor" stroke-width="2"></rect><circle cx="12" cy="12" r="2" fill="currentColor"></circle></svg></span>';
+      }
+      const parent = data.tasks.find(candidate => candidate.id === task.parentId);
+      const label = `Child task of '${parent?.title || "Unknown parent"}'`;
+      return `<span class="task-hierarchy-marker leaf" title="${escapeHtml(label)}" aria-label="${escapeHtml(label)}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 4C12 4 5 8 5 15c0 3 2 5 5 5 7 0 10-7 10-16Z"></path><path d="M5 20c3-4 7-7 12-10"></path></svg></span>`;
+    }
+
+    function completionTimingIndicator(task) {
+      if (!task.completedDate) return "";
+      const completedOnTime = !task.dueDate || task.completedDate <= task.dueDate;
+      const label = !task.dueDate
+        ? `Completed ${formatDate(task.completedDate)}. No due date was set.`
+        : completedOnTime
+          ? `Completed ${formatDate(task.completedDate)}, on or before the due date.`
+          : `Completed ${formatDate(task.completedDate)}, after the due date.`;
+      const icon = completedOnTime
+        ? '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m5 12 4 4L19 6"></path></svg>'
+        : '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"></circle><path d="M9 10h.01"></path><path d="M15 10h.01"></path><path d="M8.5 16c1-1.5 2.1-2 3.5-2s2.5.5 3.5 2"></path></svg>';
+      return `<span class="completion-timing-icon ${completedOnTime ? "on-time" : "late"}" title="${escapeHtml(label)}" aria-label="${escapeHtml(label)}" role="img">${icon}</span>`;
     }
 
     function renderTable() {
@@ -2582,6 +2626,7 @@ Calculated AI Assistance: ${percentage}%`;
         const statusTooltip = parentStatus?.tooltip || "";
         const dependencyIndicator = renderDependencyIndicator(task, displayStatus);
         const noteLink = firstNoteLink(task.notes);
+        const completionIndicator = completionTimingIndicator(task);
 
         return `
           <tr class="task-row" data-task-id="${escapeHtml(task.id)}" data-parent-id="${escapeHtml(task.parentId || "")}">
@@ -2618,8 +2663,7 @@ Calculated AI Assistance: ${percentage}%`;
             </td>
             <td><span title="${escapeHtml(hoursTooltip(displayTask))}">${escapeHtml(formatHours(displayTask.timeSpent))}</span></td>
             <td>${aiHoursSaved.display ? `<span class="ai-efficiency-value" title="${escapeHtml(aiHoursSaved.tooltip)}">${escapeHtml(aiHoursSaved.display)}</span>` : ""}</td>
-            <td class="due-date-cell">${escapeHtml(formatDate(task.dueDate))}</td>
-            <td class="due-date-cell">${escapeHtml(formatDate(task.completedDate))}</td>
+            <td class="due-date-cell"><span class="due-date-display">${escapeHtml(formatDate(task.dueDate))}${completionIndicator}</span></td>
             <td>${daysLabel(task)}</td>
             <td><div class="dependency-list">${dependencyIndicator}</div></td>
             <td class="notes-cell">${renderTaskNote(task)}</td>
@@ -2696,7 +2740,7 @@ Calculated AI Assistance: ${percentage}%`;
             return;
           }
           task.status = box.checked ? "Completed" : "In Progress";
-          task.percentComplete = box.checked ? 100 : Math.min(task.percentComplete, 95);
+          task.percentComplete = box.checked ? 100 : Math.min(task.percentComplete, 99);
           task.completedDate = box.checked ? (task.completedDate || isoDateLocal(new Date())) : "";
           task.updatedAt = new Date().toISOString();
           render();
@@ -2822,7 +2866,7 @@ Calculated AI Assistance: ${percentage}%`;
         ...(data.metadata || {}),
         application: "MyTaskAssistant",
         schemaVersion: "1.0",
-        applicationVersion: "v4.0.0",
+        applicationVersion: "v4.1.0",
         updatedAt: new Date().toISOString()
       };
       const writable = await fileHandle.createWritable();
@@ -2860,7 +2904,7 @@ Calculated AI Assistance: ${percentage}%`;
       const payload = {
         exportType: "current-view",
         exportedAt: new Date().toISOString(),
-        applicationVersion: "v4.0.0",
+        applicationVersion: "v4.1.0",
         filters: currentFilterSnapshot(),
         taskCount: visibleTasks.length,
         projects: data.projects.filter(project => referencedProjectIds.includes(project.id)),

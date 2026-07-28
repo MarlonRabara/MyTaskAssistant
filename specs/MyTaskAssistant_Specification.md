@@ -1,5 +1,5 @@
 # MyTaskAssistant Specification
-**Application Version:** v4.0.0  
+**Application Version:** v4.1.0  
 **Last Updated:** 2026-07-23
 
 ## Overview
@@ -913,6 +913,21 @@ This permits time spent on blocked, deferred, canceled, or otherwise interrupted
 
 - Tasks store an editable `completedDate` in local `YYYY-MM-DD` format. The task grid and task editor display the field.
 - When status is set to `Completed`, a missing completion date is set to the current local date. Setting progress to 100% follows the same completion synchronization.
-- Setting a non-completed status clears `completedDate`.
+- Setting a non-completed status clears `completedDate`. If the task was previously complete and progress is 100%, progress is automatically reduced below completion (default `99%`) so the task is no longer complete. The user can then adjust progress as needed.
 - Entering a completion date that is today or earlier automatically sets status to `Completed` and progress to 100%. A completed task may retain a user-edited future completion date.
 - Weekly Timesheet eligibility uses terminal tasks with Time Spent greater than zero and a `completedDate` in the selected Sunday-through-Saturday week. The initial daily allocation places the full Time Spent value on the completion-date column.
+
+## v4.2.0 Main Result View Completion Indicator
+
+- The main task grid does not display a separate Completed date column.
+- A self-contained SVG completion indicator appears beside the Due date when a task has a `completedDate`.
+- A green checkmark indicates the task was completed on or before its due date, or that no due date was set.
+- A sad-face icon indicates the task was completed after its due date.
+- The indicator tooltip identifies the completion date and whether the task was completed on time, late, or had no due date.
+
+## v4.3.0 Main Result View Standalone Task Marker
+
+- In the main task grid, a task that has neither a parent nor child tasks is a standalone task.
+- Standalone tasks display a blue, self-contained SVG marker beside Priority instead of the green leaf used for childless sub-tasks or the brown branch used for parent tasks.
+- The standalone marker is an outlined rounded square with a centered filled circle and exposes the accessible label `Standalone item`.
+- Main task-grid hierarchy-marker tooltips identify the task relationship: a parent shows `Parent task with [count] child task(s)`, a child shows `Child task of '[parent task name]'`, and a standalone task shows `Standalone task`.

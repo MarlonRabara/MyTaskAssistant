@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>MyTaskAssistant v4.0.0 – User Guide</title>
+  <title>MyTaskAssistant v4.1.0 – User Guide</title>
   <style>
     :root {
       --bg: #eef2f7;
@@ -403,7 +403,7 @@
             monitoring AI-assisted productivity, and producing weekly HTML timesheets.
           </p>
         </div>
-        <div class="version">v4.0.0</div>
+        <div class="version">v4.1.0</div>
       </div>
 
       <div class="hero-grid">
@@ -513,7 +513,7 @@
             </div>
             <div class="card">
               <h3>Task grid</h3>
-              <p>Review project, task, status, progress, time, AI hours saved, due dates, completion dates, dependencies, notes, and actions. Hours and AI Hours Saved display to one decimal place; use the horizontal scrollbar when the table exceeds the available width.</p>
+              <p>Review project, task, status, progress, time, AI hours saved, due dates, completion status, dependencies, notes, and actions. The grid does not show a separate Completed date column. A self-contained green checkmark beside Due indicates a task was completed on or before its due date, or that no due date was set; a sad-face icon indicates a late completion. Hover the icon for completion details. Hours and AI Hours Saved display to one decimal place; use the horizontal scrollbar when the table exceeds the available width.</p>
             </div>
           </div>
           <h3>Common row actions</h3>
@@ -570,7 +570,7 @@
             Reordering is limited to tasks at the same hierarchy level.
           </p>
            <p>
-             The Priority area identifies hierarchy at a glance: a green leaf marks a terminal work task with no children, while a brown branch marks a parent task with child tasks.
+             The Priority area identifies hierarchy at a glance: a green leaf marks a childless sub-task, a brown branch marks a parent task with child tasks, and a blue standalone-item icon marks a task with neither a parent nor child tasks. Hover a marker to see its parent-child relationship, including the direct child count or parent task name.
            </p>
 
            <h3>Notes</h3>
@@ -613,7 +613,7 @@
              Status and progress stay synchronized: setting progress to <b>100%</b> automatically sets Status to <b>Completed</b>, and setting Status to <b>Completed</b> automatically sets progress to <b>100%</b>. Saving does not permit a mismatched completed state.
            </p>
             <p>
-              The editable <b>Completed date</b> records when work finished. A missing date is set to today when a task becomes Completed, while changing to any non-completed status clears it. Entering a completion date that is today or earlier automatically sets Status to Completed and progress to 100%.
+              The editable <b>Completed date</b> records when work finished. A missing date is set to today when a task becomes Completed, while changing to any non-completed status clears it and reduces 100% progress to 99% so the task is no longer complete. You can then adjust progress as needed. Entering a completion date that is today or earlier automatically sets Status to Completed and progress to 100%.
             </p>
            <p>
              A task with progress greater than <b>0%</b> cannot be saved with Status set to <b>Not Started</b>. Select an active status before recording progress.
@@ -949,7 +949,7 @@
     </div>
 
     <footer class="footer">
-      MyTaskAssistant v4.0.0 · Standalone local-first application guide · Generated for distribution with the application package
+      MyTaskAssistant v4.1.0 · Standalone local-first application guide · Generated for distribution with the application package
     </footer>
   </div>
 </body>
