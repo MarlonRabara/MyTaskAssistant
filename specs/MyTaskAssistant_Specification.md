@@ -1,5 +1,5 @@
 # MyTaskAssistant Specification
-**Application Version:** v4.5.1
+**Application Version:** v4.6.0
 **Last Updated:** 2026-08-01
 
 ## Overview
@@ -526,6 +526,7 @@ Supports:
 - Full JSON Save
 - Export Active
 - Export Current View
+- Export Report
 
 ## Legacy Import Compatibility
 
@@ -576,6 +577,77 @@ The downloaded filename uses the format:
 ```text
 mytaskassistant-current-view-YYYY-MM-DD.json
 ```
+
+## Export Report
+
+The `Export Report` action creates a downloadable standalone HTML report using the tasks currently visible in the task grid.
+
+Behavior:
+
+- `Export Report` is available next to `Export View` in both the top and bottom command bars.
+- It uses the same current-view task set and hierarchy-preserving order as `Export View`.
+- It respects the active search, project, status, due-date, hide-completed, and navigation filters.
+- Archived tasks are included only when the Archive view is selected, matching `Export View` behavior.
+- The report is generated from the visible task data at the time the command is selected.
+- The report downloads as a self-contained HTML file that can be opened independently in a browser.
+
+### Export Report HTML Template Binding
+
+`Export Report` must bind the current-view data into the provided standalone HTML report template whose document title begins with `MyTaskAssistant Report` and whose hero heading is `Projects, priorities, and execution health.`
+
+Template binding requirements:
+
+- The generated report uses the supplied report template structure, styling, and client-side rendering script.
+- The template remains self-contained: embedded CSS, embedded JavaScript, and no external network or file dependencies.
+- The generated report replaces the template's sample JSON with the actual current-view report payload in:
+
+```html
+<script type="application/json" id="embeddedData">...</script>
+```
+
+- The `embeddedData` payload contains:
+  - `metadata`
+  - `projects`
+  - `tasks`
+- `metadata` includes at minimum:
+  - `application: "MyTaskAssistant"`
+  - `applicationVersion`
+  - `schemaVersion`
+  - `updatedAt`
+  - Report-generation timestamp when available
+  - Current filter snapshot when available
+- `projects` contains the projects referenced by the visible tasks.
+- `tasks` contains only the currently visible task records in the same hierarchy-preserving order used by `Export View`.
+- The template's placeholder/sample JSON data must never be emitted as report data unless it is the actual current application data.
+- The template script is responsible for rendering the report from `embeddedData` into the existing template regions.
+- The report template includes the following report sections and bound regions:
+  - Source card: `sourceApp`, `sourceVersion`, `sourceUpdated`, `sourceSchema`
+  - KPI grid: `kpiGrid`
+  - Executive summary: `summaryCopy`, `insightList`
+  - Status distribution: `statusDonut`, `activeTaskCount`, `statusLegend`
+  - Project portfolio: `projectGrid`
+  - Attention needed: `attentionList`
+  - Deadline timeline: `timeline`
+  - Task hierarchy and register: `taskTableBody`
+  - Effort and utilization: `effortSummary`, `effortChart`
+  - AI contribution: `aiSummary`, `aiChart`
+  - Data quality audit: `auditGrid`, `auditFindings`
+  - Footer timestamp: `footerGenerated`
+- The generated report should include enough task information to be useful outside the application, including project, task title, status, progress, due date, days remaining or completion state, hours, AI Hours Saved or AI contribution values when available, dependencies, notes, and update timestamps.
+
+Default filename:
+
+```text
+MyTaskAssistant-[The name of the project on the top of the list]-datetimestamp.html
+```
+
+Filename rules:
+
+- `[The name of the project on the top of the list]` is taken from the project name of the first visible task in the report order.
+- If the first visible task has no project, use `NoProject`.
+- If no tasks are visible, the export should either be disabled or use `NoTasks` in the filename.
+- The project-name portion must be sanitized for safe filesystem use.
+- `datetimestamp` uses the local date and time at export generation.
 
 `Export Active` remains available and exports all incomplete, non-archived tasks regardless of the current view filters.
 
@@ -651,6 +723,7 @@ Mirrored commands:
 
 - Load Tasks
 - Export View
+- Export Report
 - Weekly Timesheet
 - 🤖 AI Analysis
 - Export Active
@@ -1096,3 +1169,10 @@ This permits time spent on blocked, deferred, canceled, or otherwise interrupted
 - The application includes a self-contained SVG favicon declared with a `data:image/svg+xml` URL in the HTML `<head>`.
 - The favicon reflects the personal task-manager purpose of the application through task/checklist-oriented imagery.
 - No external favicon image file is required.
+
+## v4.6.0 Export Report
+
+- Added `Export Report` beside `Export View` in both the top and bottom command bars.
+- `Export Report` uses the currently visible task-grid data and hierarchy-preserving order to generate a downloadable standalone HTML report.
+- `Export Report` binds current-view data into the supplied standalone report HTML template by replacing the template's `embeddedData` JSON payload.
+- The default report filename is `MyTaskAssistant-[The name of the project on the top of the list]-datetimestamp.html`.

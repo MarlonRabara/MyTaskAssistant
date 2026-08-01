@@ -1,6 +1,6 @@
 # MyTaskAssistant
 
-**Version:** v4.5.1
+**Version:** v4.6.0
 
 A local-first, single-file task manager for organizing projects, tracking effort, monitoring AI-assisted productivity, and producing weekly HTML timesheets. No installation, no backend, no database, no account — just open one HTML file in a modern browser.
 
@@ -46,7 +46,7 @@ A local-first, single-file task manager for organizing projects, tracking effort
 - **AI Hours Saved** — computed as `estimatedEffortWithoutAI − timeSpent`; MyTaskAssistant measures AI *productivity*, not AI usage.
 - **🤖 AI Analysis** — a read-only weekly view summarizing non-archived AI-assisted tasks: Time Spent, Estimated Effort Without AI, and AI Hours Saved, with totals and a downloadable standalone HTML report.
 - **Weekly Timesheet** — generate a printable, standalone HTML timesheet for any Sunday-through-Saturday week from completed non-archived terminal tasks, with editable daily allocations initially placed on each task's completion date.
-- **JSON exports** — export the current filtered view or all active non-archived tasks as JSON. Archived tasks are exported only from the Archive view.
+- **Exports and reports** — export the current filtered view or all active non-archived tasks as JSON, or use **Export Report** to download a standalone HTML report bound to the same current-view task set and hierarchy order. Archived tasks are included only from the Archive view.
 
 ## Data Format
 
