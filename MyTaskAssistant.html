@@ -223,6 +223,12 @@
       letter-spacing: -.03em;
     }
 
+    .unsaved-indicator {
+      color: var(--blocked);
+    }
+
+    .unsaved-indicator[hidden] { display: none; }
+
     .heading p {
       margin: 5px 0 0;
       color: var(--muted);
@@ -1494,7 +1500,7 @@
   <path d="M36 32.5v7M32.5 36h7" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/>
 </svg></div>
         <div>
-          <h1>MyTaskAssistant <span class="version-badge">v4.1.0</span></h1>
+          <h1>MyTaskAssistant <span class="version-badge">v4.4.0</span></h1>
           <p>Personal task manager designed by Marlon Rabara</p>
         </div>
       </div>
@@ -1505,6 +1511,7 @@
         <button type="button" id="navCompletedBtn"><span>Completed</span><span id="navCompleted">0</span></button>
         <button type="button" id="navOverdueBtn"><span>Overdue</span><span id="navOverdue">0</span></button>
         <button type="button" id="navMostRecentBtn" title="Shows the 10 tasks with the newest created dates, ordered from most recently created to least recently created."><span>Most Recent</span><span id="navMostRecent">0</span></button>
+        <button type="button" id="navArchiveBtn" title="Shows archived task records. Archived tasks are hidden from normal views, timesheets, and AI Analysis."><span>Archive</span><span id="navArchive">0</span></button>
       </nav>
 
       <div class="file-card">
@@ -1516,7 +1523,7 @@
     <main class="main">
 <div class="topbar">
         <div class="heading">
-          <h2>My Tasks</h2>
+          <h2>My Tasks <span id="unsavedIndicator" class="unsaved-indicator" hidden>(unsaved)</span></h2>
           <p>Plan, track, and export your personal work.</p>
         </div>
         <div class="top-actions">
@@ -1524,7 +1531,7 @@
           <button class="btn btn-secondary" id="exportViewBtn" type="button" title="Download a JSON copy containing only the tasks currently shown after all active filters are applied.">Export View</button>
           <button class="btn btn-secondary" id="timesheetExportBtn" type="button" title="Choose a week, review daily hour allocation, and download a standalone HTML timesheet.">Weekly Timesheet</button>
           <button class="btn btn-secondary" id="aiAnalysisBtn" type="button" title="Review weekly AI Hours Saved for eligible AI-assisted tasks and download the analysis as HTML.">🤖 AI Analysis</button>
-          <button class="btn btn-secondary" id="exportBtn" type="button" title="Download a JSON copy of every task that is not yet completed, regardless of the current filters.">Export Active</button>
+          <button class="btn btn-secondary" id="exportBtn" type="button" title="Download a JSON copy of every non-archived task that is not yet completed, regardless of the current filters.">Export Active</button>
           <button class="btn btn-secondary" id="saveBtn" type="button" title="Save all current projects and tasks back to the loaded task file, or choose a new file if none is loaded.">Save</button>
           <button class="btn btn-secondary" id="manageProjectsBtn" type="button" title="Create, edit, or delete the projects used to organize tasks.">Projects</button>
           <button class="btn btn-primary" id="addBtn" type="button" title="Create a new task and enter its details, work estimates, status, and relationships.">+ Add Task</button>
@@ -1853,8 +1860,21 @@
     let sortState = { key: null, direction: "asc" };
     let selectedParentId = null;
     let selectedDependencyIds = [];
+    let saved = true;
+
+    const APPLICATION_VERSION = "v4.4.0";
 
     const $ = (id) => document.getElementById(id);
+
+    function setSavedState(value) {
+      saved = Boolean(value);
+      const indicator = $("unsavedIndicator");
+      if (indicator) indicator.hidden = saved;
+    }
+
+    function markTaskDataChanged() {
+      setSavedState(false);
+    }
 
     function escapeHtml(value) {
       return String(value ?? "")
@@ -1898,6 +1918,7 @@
       const status = task.status ?? task.taskStatus ?? "Not Started";
       const dueDate = task.dueDate ?? task.due ?? task.targetDate ?? "";
       const completedDate = String(task.completedDate ?? "").slice(0, 10);
+      const archived = task.archived === true || String(task.archived).toLowerCase() === "true";
       return {
         id: String(task.id ?? crypto.randomUUID()),
         title: task.title ?? "Untitled task",
@@ -1945,6 +1966,7 @@
         priorityOrder: Number.isFinite(Number(task.priorityOrder)) ? Math.max(1, Number(task.priorityOrder)) : 999999,
         dueDate,
         completedDate: status === "Completed" && !completedDate ? dueDate : completedDate,
+        archived,
         notes: task.notes ?? task.description ?? task.detail ?? "",
         dependsOn: Array.isArray(task.dependsOn ?? task.dependencies) ? (task.dependsOn ?? task.dependencies).map(String) : [],
         parentId: task.parentId ?? task.parentTaskId ? String(task.parentId ?? task.parentTaskId) : null,
@@ -1955,7 +1977,7 @@
 
     function renderTaskNote(task) {
       if (!task.notes) return "—";
-      return `<div class="task-note-preview" data-note-preview>${linkifyNotes(task.notes)}</div><button class="see-more-notes" type="button" data-edit-id="${escapeHtml(task.id)}">...(see more)</button>`;
+      return `<div class="task-note-preview" data-note-preview title="${escapeHtml(task.notes)}">${linkifyNotes(task.notes)}</div><button class="see-more-notes" type="button" data-edit-id="${escapeHtml(task.id)}">...(see more)</button>`;
     }
 
     function updateTruncatedNoteControls() {
@@ -1978,7 +2000,7 @@
         if (parentId === null || parentId === undefined || parentId === "") continue;
 
         const parent = tasksById.get(String(parentId));
-        if (!parent || visibleTasks.has(String(parent.id))) continue;
+        if (!parent || Boolean(parent.archived) !== Boolean(task.archived) || visibleTasks.has(String(parent.id))) continue;
 
         visibleTasks.set(String(parent.id), parent);
         pendingTasks.push(parent);
@@ -2020,7 +2042,7 @@
     }
 
     function taskLevelKey(task) {
-      return task.parentId || "__root__";
+      return `${task.archived ? "archived" : "active"}:${task.parentId || "__root__"}`;
     }
 
     function normalizePriorityOrders() {
@@ -2044,9 +2066,9 @@
       });
     }
 
-    function siblingTasks(parentId) {
+    function siblingTasks(parentId, archived = false) {
       return data.tasks
-        .filter(task => (task.parentId || null) === (parentId || null))
+        .filter(task => Boolean(task.archived) === Boolean(archived) && (task.parentId || null) === (parentId || null))
         .sort((a, b) => Number(a.priorityOrder) - Number(b.priorityOrder));
     }
 
@@ -2146,7 +2168,7 @@
       while (parentId && !visited.has(parentId)) {
         visited.add(parentId);
         const parent = data.tasks.find(candidate => candidate.id === parentId);
-        if (!parent) break;
+        if (!parent || Boolean(parent.archived) !== Boolean(task.archived)) break;
         depth += 1;
         parentId = parent.parentId;
       }
@@ -2160,18 +2182,18 @@
         .slice(0, limit);
     }
 
-    function childTasks(parentId) {
-      return data.tasks.filter(task => task.parentId === parentId);
+    function childTasks(parentId, archived = null) {
+      return data.tasks.filter(task => task.parentId === parentId && (archived === null || Boolean(task.archived) === Boolean(archived)));
     }
 
-    function descendantTasks(parentId) {
+    function descendantTasks(parentId, archived = null) {
       const descendants = [];
       const pendingParentIds = [parentId];
       const visited = new Set();
 
       while (pendingParentIds.length) {
         const currentParentId = pendingParentIds.pop();
-        childTasks(currentParentId).forEach(child => {
+        childTasks(currentParentId, archived).forEach(child => {
           if (visited.has(child.id)) return;
           visited.add(child.id);
           descendants.push(child);
@@ -2182,12 +2204,37 @@
       return descendants;
     }
 
+    function ancestorTasks(parentId) {
+      const ancestors = [];
+      const visited = new Set();
+      let currentParentId = parentId;
+
+      while (currentParentId && !visited.has(currentParentId)) {
+        visited.add(currentParentId);
+        const parent = data.tasks.find(task => task.id === currentParentId);
+        if (!parent) break;
+        ancestors.push(parent);
+        currentParentId = parent.parentId;
+      }
+
+      return ancestors;
+    }
+
+    function unarchiveParentChain(parentId) {
+      const now = new Date().toISOString();
+      ancestorTasks(parentId).forEach(parent => {
+        if (!parent.archived) return;
+        parent.archived = false;
+        parent.updatedAt = now;
+      });
+    }
+
     function hasChildren(task) {
-      return childTasks(task.id).length > 0;
+      return childTasks(task.id, task.archived).length > 0;
     }
 
     function terminalDescendantTasks(task) {
-      return descendantTasks(task.id).filter(descendant => !hasChildren(descendant));
+      return descendantTasks(task.id, task.archived).filter(descendant => !hasChildren(descendant));
     }
 
     function validAiHoursSaved(task) {
@@ -2338,7 +2385,7 @@ Calculated AI Assistance: ${percentage}%`;
       if (!dragged || !target) return;
       if ((dragged.parentId || null) !== (target.parentId || null)) return;
 
-      const siblings = siblingTasks(dragged.parentId);
+      const siblings = siblingTasks(dragged.parentId, dragged.archived);
       const fromIndex = siblings.findIndex(task => task.id === draggedId);
       const toIndex = siblings.findIndex(task => task.id === targetId);
       if (fromIndex < 0 || toIndex < 0) return;
@@ -2350,6 +2397,7 @@ Calculated AI Assistance: ${percentage}%`;
         task.updatedAt = new Date().toISOString();
       });
       normalizePriorityOrders();
+      markTaskDataChanged();
       render();
     }
 
@@ -2418,8 +2466,10 @@ Calculated AI Assistance: ${percentage}%`;
       const project = $("projectFilter").value;
       const dueDateFilter = $("dueDateFilter").value;
       const hideCompleted = $("hideCompleted").checked;
+      const archiveView = forcedView === "archive";
 
       return data.tasks.filter(task => {
+        if (Boolean(task.archived) !== archiveView) return false;
         const searchable = JSON.stringify(task).toLowerCase();
         if (q && !searchable.includes(q)) return false;
         if (hideCompleted && isComplete(task)) return false;
@@ -2467,11 +2517,13 @@ Calculated AI Assistance: ${percentage}%`;
     }
 
     function renderMetrics() {
-      const total = data.tasks.length;
-      const completed = data.tasks.filter(isComplete).length;
+      const activeTaskSet = data.tasks.filter(task => !task.archived);
+      const archived = data.tasks.filter(task => task.archived).length;
+      const total = activeTaskSet.length;
+      const completed = activeTaskSet.filter(isComplete).length;
       const active = total - completed;
-      const overdue = data.tasks.filter(t => !isComplete(t) && daysRemaining(t.dueDate) < 0).length;
-      const average = total ? Math.round(data.tasks.reduce((sum, t) => sum + Number(t.percentComplete || 0), 0) / total) : 0;
+      const overdue = activeTaskSet.filter(t => !isComplete(t) && daysRemaining(t.dueDate) < 0).length;
+      const average = total ? Math.round(activeTaskSet.reduce((sum, t) => sum + Number(t.percentComplete || 0), 0) / total) : 0;
 
       $("metricTotal").textContent = total;
       $("metricActive").textContent = active;
@@ -2483,6 +2535,7 @@ Calculated AI Assistance: ${percentage}%`;
       $("navCompleted").textContent = completed;
       $("navOverdue").textContent = overdue;
       $("navMostRecent").textContent = Math.min(total, 10);
+      $("navArchive").textContent = archived;
     }
 
     function aiHoursSavedDetails(task) {
@@ -2627,6 +2680,11 @@ Calculated AI Assistance: ${percentage}%`;
         const dependencyIndicator = renderDependencyIndicator(task, displayStatus);
         const noteLink = firstNoteLink(task.notes);
         const completionIndicator = completionTimingIndicator(task);
+        const archiveLabel = task.archived ? "Unarchive Task" : "Archive Task";
+        const archiveTitle = task.archived ? "Unarchive Task" : "Archive Task";
+        const archiveIcon = task.archived
+          ? '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4.5 10.5v8.75h15V10.5"></path><path d="M3.75 6.25h16.5v4.25H3.75z"></path><path d="M9 14.25h6"></path><path d="M12 17.25v-6"></path></svg>'
+          : '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4.5 10.5v8.75h15V10.5"></path><path d="M3.75 6.25h16.5v4.25H3.75z"></path><path d="M9 14.25h6"></path></svg>';
 
         return `
           <tr class="task-row" data-task-id="${escapeHtml(task.id)}" data-parent-id="${escapeHtml(task.parentId || "")}">
@@ -2696,6 +2754,9 @@ Calculated AI Assistance: ${percentage}%`;
                     <path d="M14.5 6.5l3 3"></path>
                   </svg>
                 </button>
+                <button class="icon-btn" type="button" data-archive-id="${escapeHtml(task.id)}" title="${archiveTitle}" aria-label="${archiveLabel}">
+                  ${archiveIcon}
+                </button>
                 <button class="icon-btn danger" type="button" data-delete-id="${escapeHtml(task.id)}" title="Delete Task" aria-label="Delete Task">
                   <svg viewBox="0 0 24 24" aria-hidden="true">
                     <path d="M4.5 7.5h15"></path>
@@ -2757,6 +2818,10 @@ Calculated AI Assistance: ${percentage}%`;
 
       document.querySelectorAll("[data-edit-id]").forEach(button => {
         button.addEventListener("click", () => openTaskDialog(button.dataset.editId));
+      });
+
+      document.querySelectorAll("[data-archive-id]").forEach(button => {
+        button.addEventListener("click", () => toggleTaskArchive(button.dataset.archiveId));
       });
 
       document.querySelectorAll("[data-goto-link]").forEach(button => {
@@ -2849,6 +2914,7 @@ Calculated AI Assistance: ${percentage}%`;
         $("fileStatusTitle").textContent = file.name;
         $("fileStatusText").textContent = "Connected. Changes can be saved directly to this JSON file.";
         render();
+        setSavedState(true);
       } catch (error) {
         if (error.name !== "AbortError") {
           console.error("Unable to open task file.", error);
@@ -2866,13 +2932,14 @@ Calculated AI Assistance: ${percentage}%`;
         ...(data.metadata || {}),
         application: "MyTaskAssistant",
         schemaVersion: "1.0",
-        applicationVersion: "v4.1.0",
+        applicationVersion: APPLICATION_VERSION,
         updatedAt: new Date().toISOString()
       };
       const writable = await fileHandle.createWritable();
       await writable.write(JSON.stringify(data, null, 2));
       await writable.close();
       $("fileStatusText").textContent = "Saved " + new Date().toLocaleTimeString();
+      setSavedState(true);
     }
 
     function downloadJson(payload, filename) {
@@ -2904,7 +2971,7 @@ Calculated AI Assistance: ${percentage}%`;
       const payload = {
         exportType: "current-view",
         exportedAt: new Date().toISOString(),
-        applicationVersion: "v4.1.0",
+        applicationVersion: APPLICATION_VERSION,
         filters: currentFilterSnapshot(),
         taskCount: visibleTasks.length,
         projects: data.projects.filter(project => referencedProjectIds.includes(project.id)),
@@ -2916,7 +2983,7 @@ Calculated AI Assistance: ${percentage}%`;
     }
 
     function exportActive() {
-      const activeTasks = data.tasks.filter(task => !isComplete(task));
+      const activeTasks = data.tasks.filter(task => !task.archived && !isComplete(task));
       const referencedProjectIds = [...new Set(activeTasks.map(t => t.projectId).filter(Boolean))];
       const payload = {
         exportType: "active-tasks",
@@ -2941,18 +3008,45 @@ Calculated AI Assistance: ${percentage}%`;
       if (!source) return;
 
       const now = new Date().toISOString();
+      if (source.archived && source.parentId) {
+        unarchiveParentChain(source.parentId);
+      }
       const clone = normalizeTask({
         ...source,
         id: generateTaskId(),
         title: `${source.title} - Copy`,
+        archived: false,
         dependsOn: Array.isArray(source.dependsOn) ? [...source.dependsOn] : [],
-        priorityOrder: siblingTasks(source.parentId || null).length + 1,
+        priorityOrder: siblingTasks(source.parentId || null, false).length + 1,
         createdAt: now,
         updatedAt: now
       });
 
       data.tasks.push(clone);
       normalizePriorityOrders();
+      markTaskDataChanged();
+      render();
+    }
+
+    function toggleTaskArchive(id) {
+      const task = data.tasks.find(t => t.id === id);
+      if (!task) return;
+
+      if (!task.archived) {
+        const descendants = descendantTasks(task.id);
+        const message = `Are you sure?\n\nArchiving task: "${task.title}"\nChild/descendant tasks included: ${descendants.length}\n\nThe selected task${descendants.length ? " and included child/descendant task records" : ""} will be hidden from normal views, Weekly Timesheet, and AI Analysis.`;
+        if (!confirm(message)) return;
+
+        const now = new Date().toISOString();
+        [task, ...descendants].forEach(item => {
+          item.archived = true;
+          item.updatedAt = now;
+        });
+      } else {
+        task.archived = false;
+        task.updatedAt = new Date().toISOString();
+      }
+      markTaskDataChanged();
       render();
     }
 
@@ -2998,7 +3092,7 @@ Calculated AI Assistance: ${percentage}%`;
       $("percentageOfAIAssistanceValue").value = `${Math.round(displayTask?.aiAssistancePercentage ?? 0)}%`;
       $("percentageOfAIAssistanceValue").textContent = `${Math.round(displayTask?.aiAssistancePercentage ?? 0)}%`;
       const initialParentId = task?.parentId ?? defaults.parentId ?? null;
-      $("taskPriorityInput").value = task?.priorityOrder ?? (siblingTasks(initialParentId).length + 1);
+      $("taskPriorityInput").value = task?.priorityOrder ?? (siblingTasks(initialParentId, false).length + 1);
       $("taskDueDateInput").value = task?.dueDate ?? "";
       $("taskCompletedDateInput").value = task?.completedDate ?? "";
       selectedParentId = initialParentId;
@@ -3038,7 +3132,7 @@ Calculated AI Assistance: ${percentage}%`;
     }
 
     function renderSubTasks(task) {
-      const children = task ? childTasks(task.id) : [];
+      const children = task ? childTasks(task.id, task.archived) : [];
       $("subTasksTab").disabled = !task;
       $("subTasksList").innerHTML = !task
         ? '<div class="empty">Save this task before adding or viewing sub-tasks.</div>'
@@ -3057,7 +3151,9 @@ Calculated AI Assistance: ${percentage}%`;
 
 
     function eligibleTaskOptions() {
-      return data.tasks.filter(task => task.id !== editingTaskId);
+      const editingTask = editingTaskId ? data.tasks.find(task => task.id === editingTaskId) : null;
+      const archiveState = Boolean(editingTask?.archived);
+      return data.tasks.filter(task => task.id !== editingTaskId && Boolean(task.archived) === archiveState);
     }
 
     function closeTypeaheadResults() {
@@ -3199,6 +3295,7 @@ Calculated AI Assistance: ${percentage}%`;
           dependsOn: Array.isArray(t.dependsOn) ? t.dependsOn.filter(depId => depId !== id) : []
         }));
 
+      markTaskDataChanged();
       render();
     }
 
@@ -3260,9 +3357,10 @@ Calculated AI Assistance: ${percentage}%`;
         timeSpent: hasChildTasks ? existing.timeSpent : timeSpentValue,
         estimatedEffortWithoutAI: hasChildTasks ? existing.estimatedEffortWithoutAI : effortWithoutAIValue,
         aiAssistancePercentage: aiAssistanceValue,
-        priorityOrder: Math.max(1, Number($("taskPriorityInput").value || (siblingTasks(selectedParentId).length + 1))),
+        priorityOrder: Math.max(1, Number($("taskPriorityInput").value || (siblingTasks(selectedParentId, existing?.archived ?? false).length + 1))),
         dueDate: $("taskDueDateInput").value,
         completedDate: $("taskCompletedDateInput").value,
+        archived: existing?.archived ?? false,
         parentId: selectedParentId || null,
         dependsOn: [...selectedDependencyIds],
         notes: $("taskNotesInput").value.trim(),
@@ -3278,9 +3376,13 @@ Calculated AI Assistance: ${percentage}%`;
         Object.assign(existing, task);
       } else {
         data.tasks.push(task);
+        if (task.parentId) {
+          unarchiveParentChain(task.parentId);
+        }
       }
 
       $("taskDialog").close();
+      markTaskDataChanged();
       render();
     }
 
@@ -3293,6 +3395,7 @@ Calculated AI Assistance: ${percentage}%`;
       const weekEnd = new Date(weekStart);
       weekEnd.setDate(weekEnd.getDate() + 6);
       const rows = data.tasks.filter(task => {
+        if (task.archived) return false;
         if (!task.dueDate || task.status === "Not Started") return false;
         const due = new Date(`${task.dueDate}T00:00:00`);
         return due >= weekStart && due <= weekEnd && Number(task.timeSpent || 0) > 0 && Number(task.aiAssistancePercentage || 0) > 0 && task.estimatedEffortWithoutAI !== null && task.estimatedEffortWithoutAI !== undefined && task.estimatedEffortWithoutAI !== "";
@@ -3390,6 +3493,7 @@ Calculated AI Assistance: ${percentage}%`;
 
     function timesheetEligibleTasks() {
       return data.tasks
+        .filter(task => !task.archived)
         .filter(task => !hasChildren(task))
         .filter(task => Number(task.timeSpent || 0) > 0)
         .filter(task => task.completedDate)
@@ -3725,7 +3829,8 @@ Calculated AI Assistance: ${percentage}%`;
         active: $("navActiveBtn"),
         completed: $("navCompletedBtn"),
         overdue: $("navOverdueBtn"),
-        "most-recent": $("navMostRecentBtn")
+        "most-recent": $("navMostRecentBtn"),
+        archive: $("navArchiveBtn")
       };
       (map[view] || document.querySelector(".nav button")).classList.add("active");
       renderTable();
@@ -3795,9 +3900,11 @@ Calculated AI Assistance: ${percentage}%`;
     $("navCompletedBtn").addEventListener("click", () => setView("completed"));
     $("navOverdueBtn").addEventListener("click", () => setView("overdue"));
     $("navMostRecentBtn").addEventListener("click", () => setView("most-recent"));
+    $("navArchiveBtn").addEventListener("click", () => setView("archive"));
     document.querySelector(".nav button").addEventListener("click", () => setView("all"));
 
     normalizePriorityOrders();
+    setSavedState(true);
     render();
   </script>
 </body>

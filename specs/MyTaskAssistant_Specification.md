@@ -1,6 +1,6 @@
 # MyTaskAssistant Specification
-**Application Version:** v4.1.0  
-**Last Updated:** 2026-07-23
+**Application Version:** v4.4.0
+**Last Updated:** 2026-08-01
 
 ## Overview
 
@@ -59,6 +59,22 @@ The application uses a single JSON file.
 The HTML is the application.
 The JSON is the persistent data and source of truth for task content.
 
+## Runtime System State
+
+The application maintains an in-memory `saved` state that indicates whether the current browser session has unsaved task-record changes.
+
+Rules:
+
+- The `saved` state is runtime-only and must never be written to the JSON data file.
+- On initial application load, before a data file is opened, `saved` is `true`.
+- Immediately after a task data file is loaded, `saved` is `true`.
+- When the Save action successfully writes the task data file, `saved` is set to `true`.
+- The following task-record changes immediately set `saved` to `false`:
+  - Adding a task
+  - Deleting a task
+  - Modifying a task
+- Task modification includes changes made through the task editor, completion checkbox, priority reordering, archive/unarchive action, clone creation, child-task creation, parent/dependency changes, and any other operation that changes a task record.
+
 ---
 
 # Task Model
@@ -79,6 +95,7 @@ Each task contains:
 - `priorityOrder`
 - `dueDate`
 - `completedDate`
+- `archived`
 - `notes`
 - `createdAt`
 - `updatedAt`
@@ -310,6 +327,7 @@ Supports:
 - Create
 - Edit
 - Delete
+- Archive / Unarchive
 - Mark Complete
 - Clone
 - Create Child Task
@@ -337,6 +355,10 @@ Creates a new task that:
 
 Child tasks are not cloned.
 
+An archived source task may be cloned from the Archive view, but the clone is created with `archived: false` so it appears as a new active task record.
+
+If the archived source task is a child task, cloning it automatically sets each archived ancestor in its parent chain to `archived: false` so the unarchived clone has visible hierarchy context in normal task views.
+
 ## Create Child Task
 
 Selecting Create Child:
@@ -346,6 +368,64 @@ Selecting Create Child:
   - `parentId`
   - `projectId`, inherited from the parent
 - Allows the user to modify the remaining fields before saving
+
+If the selected parent task is archived, saving the new child task automatically sets the parent task and any archived ancestors in its parent chain to `archived: false`. This keeps the newly created child visible with its hierarchy context in normal task views.
+
+---
+
+# Task Archiving
+
+Archiving provides a reversible alternative to deleting a task record.
+
+## Data Model and Compatibility
+
+- Each task stores an `archived` Boolean property.
+- `archived: true` identifies an archived task; `archived: false` identifies a non-archived task.
+- New tasks default to `archived: false`.
+- When loaded data omits `archived`, or supplies a value that cannot be normalized to a Boolean, the task is treated as not archived and normalized to `archived: false`.
+- Saving writes the normalized `archived` property for every task.
+
+## Archive Command
+
+- Every non-archived task row provides an Archive icon in the Actions area.
+- Selecting Archive must display a confirmation prompt containing the question `Are you sure?` before changing the record.
+- The confirmation prompt must identify the task being archived by title.
+- If the selected task has child or descendant tasks, the confirmation prompt must state how many child and descendant task records will also be archived.
+- Canceling the confirmation leaves the task unchanged.
+- Confirming sets `archived` to `true`, updates `updatedAt`, and immediately removes the task from the current non-Archive results as if it had been deleted from that view. The task data is retained.
+- When a parent task is archived, every child and descendant task is also archived in the same operation.
+- Parent archive cascading is intended to keep the normal task list small as completed sets of related tasks are retired together.
+
+## Archive Cascade and Reactivation Rules
+
+- Archiving a parent cascades downward to all descendants.
+- Archiving a child does not archive its parent or siblings.
+- Unarchiving a parent does not automatically unarchive descendants; descendants remain archived until explicitly unarchived or reactivated by a child-related operation.
+- Cloning an archived child task creates a non-archived clone and automatically unarchives its parent chain so the clone is visible in normal views.
+- Adding a new child to an archived parent automatically unarchives that parent chain so the new child is visible in normal views.
+- Automatic parent-chain unarchiving updates `updatedAt` on each affected parent or ancestor task.
+
+## Unarchive Command
+
+- In the Archive view, the same action position and button changes to an Unarchive icon and command for archived tasks.
+- Selecting Unarchive sets `archived` to `false`, updates `updatedAt`, and immediately removes the task from the Archive view.
+- Unarchiving does not require the archive confirmation prompt because it does not remove or archive data.
+
+## Archive View and Visibility
+
+- The left navigation includes an `Archive` view with a count of archived task records.
+- The Archive view is the only main task-grid view in which archived tasks may appear.
+- All other left-panel views and normal task-grid results exclude archived tasks before applying search, project, status, due-date, and hide-completed filters.
+- In the Archive view, those main search and filtering controls operate only on archived tasks.
+- The parent-context rule must not cause an archived parent to appear in a non-Archive view or a non-archived parent to appear in the Archive view. Parent context is limited to records whose `archived` value matches the selected view.
+- Archived tasks are excluded from normal task metrics and navigation counts. The Archive navigation count reports the number of archived records.
+
+## Reporting and Export Exclusions
+
+- Archived tasks never participate in Weekly Timesheet eligibility, preview rows, totals, or downloaded timesheet HTML.
+- Archived tasks never participate in AI Analysis eligibility, summary metrics, detail rows, totals, or downloaded AI Analysis HTML.
+- `Export Active` excludes archived tasks.
+- `Export View` excludes archived tasks in every non-Archive view. When the Archive view is selected, `Export View` may export the archived records currently visible after the active main-grid filters are applied.
 
 ---
 
@@ -380,10 +460,11 @@ Supports:
 - Active view
 - Overdue view
 - Due-date filter
+- Archive view
 
 ## Parent Context in Main Results
 
-When a child task satisfies the active filters and is therefore visible in the main task-grid results, its parent task must also be shown even when the parent does not satisfy one or more active filters. The parent is contextual only; it does not count as a filter match. Higher ancestors are included recursively when available so the visible child retains its complete hierarchy path. This rule applies to the main task-grid rendering only and does not change the filtered task set used by **Export View**.
+When a child task satisfies the active filters and is therefore visible in the main task-grid results, its parent task must also be shown even when the parent does not satisfy one or more active filters. The parent is contextual only; it does not count as a filter match. Higher ancestors are included recursively when available so the visible child retains its complete hierarchy path. Parent context never crosses the archive boundary: normal views include only non-archived ancestors, and the Archive view includes only archived ancestors. This rule applies to the main task-grid rendering only and does not change the filtered task set used by **Export View**.
 
 ## Due-Date Filter
 
@@ -446,6 +527,8 @@ The importer normalizes common legacy aliases before rendering:
 - `due` or `targetDate` → `dueDate`; `description` or `detail` → `notes`
 - `dependencies` → `dependsOn`; `parentTaskId` → `parentId`
 
+The importer normalizes `archived` to a Boolean. A missing or invalid `archived` value defaults to `false` for backward compatibility.
+
 When imported data has status `Completed` but no `completedDate`, the importer uses its due date as the completion date when one is available.
 
 Missing optional values are normalized safely. Saving writes the current schema only.
@@ -461,7 +544,7 @@ It respects the active:
 - Status filter
 - Due-date filter
 - Hide-completed setting
-- Navigation view: All, Active, Completed, or Overdue
+- Navigation view: All, Active, Completed, Overdue, Most Recent, or Archive
 
 The exported task order matches the hierarchy-preserving order shown in the grid.
 
@@ -481,7 +564,7 @@ The downloaded filename uses the format:
 mytaskassistant-current-view-YYYY-MM-DD.json
 ```
 
-`Export Active` remains available and exports all incomplete tasks regardless of the current view filters.
+`Export Active` remains available and exports all incomplete, non-archived tasks regardless of the current view filters.
 
 When data is saved, metadata includes:
 
@@ -501,6 +584,7 @@ Older task records that do not contain AI productivity fields remain valid. Miss
 - `estimatedEffortWithoutAI`: `null`
 - `timeSpent`: `0`
 - `aiAssistancePercentage`: `0` (default assumption: AI produced no measurable productivity gain)
+- `archived`: `false`
 
 Older JSON files may contain legacy property names. On import, they are automatically mapped:
 
@@ -539,15 +623,20 @@ Displays:
 - Application logo
 - Application name
 - Visible application version badge
+- When runtime `saved` is `false`, the heading area next to `My Tasks` displays `(unsaved)` in the same font style and size as the `My Tasks` text.
+- The `(unsaved)` indicator is red.
+- When runtime `saved` is `true`, the `(unsaved)` indicator is hidden.
 
 ## Task Row Actions
 
 Compact inline SVG action icons:
 
-1. Clone Task — document with plus
-2. Create Child Task — hierarchy with plus
-3. Edit Task — pencil
-4. Delete Task — trash
+1. Goto Link — link
+2. Clone Task — document with plus
+3. Create Child Task — hierarchy with plus
+4. Edit Task — pencil
+5. Archive or Unarchive — archive-state icon
+6. Delete Task — trash
 
 Characteristics:
 
@@ -556,6 +645,8 @@ Characteristics:
 - Approximately 28-pixel click targets
 - Tight spacing of approximately 3 pixels
 - Neutral styling
+- The archive-state icon and accessible label show Archive for non-archived tasks and Unarchive for archived tasks
+- Archive requires an `Are you sure?` confirmation before the state changes
 - Delete icon highlights red on hover
 
 ## AI Assistance Slider
@@ -931,3 +1022,16 @@ This permits time spent on blocked, deferred, canceled, or otherwise interrupted
 - Standalone tasks display a blue, self-contained SVG marker beside Priority instead of the green leaf used for childless sub-tasks or the brown branch used for parent tasks.
 - The standalone marker is an outlined rounded square with a centered filled circle and exposes the accessible label `Standalone item`.
 - Main task-grid hierarchy-marker tooltips identify the task relationship: a parent shows `Parent task with [count] child task(s)`, a child shows `Child task of '[parent task name]'`, and a standalone task shows `Standalone task`.
+
+## v4.1.1 Task-Row Note Hover
+
+- Hovering a task-row Notes preview displays the full task note in a native browser tooltip, including text that exceeds the five-line preview.
+- The existing note preview, hyperlink behavior, and `...(see more)` editor action remain unchanged.
+
+## v4.4.0 Unsaved Task Change Indicator
+
+- The application maintains a runtime-only `saved` state that is not persisted to JSON.
+- Initial application load and successful data-file load set `saved` to `true`.
+- A successful Save action sets `saved` to `true`.
+- Adding, deleting, or modifying a task immediately sets `saved` to `false`.
+- When `saved` is `false`, the `My Tasks` heading displays a red `(unsaved)` indicator in the same font style and size as the heading text.

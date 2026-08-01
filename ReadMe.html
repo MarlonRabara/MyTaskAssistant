@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>MyTaskAssistant v4.1.0 – User Guide</title>
+  <title>MyTaskAssistant v4.4.0 – User Guide</title>
   <style>
     :root {
       --bg: #eef2f7;
@@ -403,7 +403,7 @@
             monitoring AI-assisted productivity, and producing weekly HTML timesheets.
           </p>
         </div>
-        <div class="version">v4.1.0</div>
+        <div class="version">v4.4.0</div>
       </div>
 
       <div class="hero-grid">
@@ -575,13 +575,22 @@
 
            <h3>Notes</h3>
            <p>
-             The Notes column previews up to five lines. If more text is available, a bold <b>...(see more)</b> action appears and opens that task in the editor. In the editor, use <b>Expand Notes</b> to enlarge the Notes field for reading or editing long text; select <b>Collapse Notes</b> to restore the standard size.
+             The Notes column previews up to five lines. Hover a note to view its complete text. If more text is available, a bold <b>...(see more)</b> action appears and opens that task in the editor. In the editor, use <b>Expand Notes</b> to enlarge the Notes field for reading or editing long text; select <b>Collapse Notes</b> to restore the standard size.
            </p>
            <p>
              The task editor opens on <b>Task Detail</b>, which uses the full-width two-column form. For a saved parent task, select the adjacent <b>Sub-Tasks</b> tab to replace the detail form with full-width rows for direct child tasks. Each row shows the child title, status, and Time Spent; select a row to load that child into the same task editor window.
            </p>
             <p>
               Below <b>Percentage of AI assistance</b>, the editor groups Parent Task above Dependencies on the left and Due Date above Completed Date on the right. Priority order is directly above Notes. Time Spent and Estimated Effort Without AI are aligned side by side with equal-height controls.
+            </p>
+
+            <h3>Archiving</h3>
+            <p>
+              Use the row Archive action to hide a task from normal task views after confirming <b>Are you sure?</b>. The confirmation identifies the selected task and how many child or descendant task records will be included. Archiving a parent archives all descendants, which keeps the normal task list small as completed task sets are retired together. Archived tasks are retained in the data file but no longer participate in Weekly Timesheet, AI Analysis, Export Active, or normal metrics.
+            </p>
+            <p>
+              Select the left-panel <b>Archive</b> view to search and filter archived records. In that view, the same row action changes to <b>Unarchive</b>, which restores the task to normal views.
+              Cloning an archived child or adding a child to an archived parent automatically unarchives the parent chain so the active child has visible hierarchy context.
             </p>
 
            <h3>Parent task rollups</h3>
@@ -646,8 +655,9 @@
           </div>
           <p>
             The <b>Hide Completed</b> checkbox can be combined with the other filters. The left navigation also provides All,
-            Active, Completed, Overdue, and Most Recent views. Most Recent shows up to 10 tasks with the newest creation dates,
+            Active, Completed, Overdue, Most Recent, and Archive views. Most Recent shows up to 10 tasks with the newest creation dates,
             ordered newest first after active filters are applied. Hover over Most Recent in the app to see its filtering criteria.
+            Archive is the only view where archived records participate in search and filtering.
           </p>
           <div class="callout">
             <b>Due Next Month</b> is available in the Due Date dropdown. It includes tasks due from the first through the final day of the next calendar month; it is not a left-navigation view.
@@ -705,6 +715,9 @@
             Select <b>Save</b> to write the current projects and tasks back to the opened JSON file. Depending on browser security settings,
             you may need to grant permission or select a location.
           </p>
+          <p>
+            When task changes have not been saved, a red <b>(unsaved)</b> indicator appears beside <b>My Tasks</b>. It is hidden on first load, after loading a file, and after Save completes successfully.
+          </p>
 
           <div class="callout danger">
             <strong>There is no remote server or automatic cloud backup.</strong>
@@ -727,22 +740,22 @@
             <tbody>
               <tr>
                 <td>Export View</td>
-                <td>Only tasks visible under the current search, project, status, due-date, hide-completed, and navigation filters.</td>
+                <td>Only tasks visible under the current search, project, status, due-date, hide-completed, and navigation filters. Archived tasks are included only when the Archive view is selected.</td>
                 <td>JSON</td>
               </tr>
               <tr>
                 <td>Export Active</td>
-                <td>All incomplete tasks, regardless of the current view filters.</td>
+                <td>All incomplete, non-archived tasks, regardless of the current view filters.</td>
                 <td>JSON</td>
               </tr>
               <tr>
                 <td>Weekly Timesheet</td>
-                <td>Eligible time-bearing tasks for a selected week, with editable daily allocation and totals.</td>
+                <td>Eligible non-archived time-bearing tasks for a selected week, with editable daily allocation and totals.</td>
                 <td>Standalone HTML</td>
               </tr>
               <tr>
                 <td>🤖 AI Analysis</td>
-                <td>Read-only weekly view of AI-assisted tasks showing Time Spent, AI %, Estimated Effort Without AI, and AI Hours Saved.</td>
+                <td>Read-only weekly view of non-archived AI-assisted tasks showing Time Spent, AI %, Estimated Effort Without AI, and AI Hours Saved.</td>
                 <td>Standalone HTML</td>
               </tr>
             </tbody>
@@ -949,7 +962,7 @@
     </div>
 
     <footer class="footer">
-      MyTaskAssistant v4.1.0 · Standalone local-first application guide · Generated for distribution with the application package
+      MyTaskAssistant v4.4.0 · Standalone local-first application guide · Generated for distribution with the application package
     </footer>
   </div>
 </body>

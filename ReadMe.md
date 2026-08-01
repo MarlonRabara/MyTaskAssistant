@@ -1,6 +1,6 @@
 # MyTaskAssistant
 
-**Version:** v4.1.0
+**Version:** v4.4.0
 
 A local-first, single-file task manager for organizing projects, tracking effort, monitoring AI-assisted productivity, and producing weekly HTML timesheets. No installation, no backend, no database, no account — just open one HTML file in a modern browser.
 
@@ -17,14 +17,16 @@ A local-first, single-file task manager for organizing projects, tracking effort
 
 - **Projects and tasks** — organize tasks by project, with subtasks, parent/child relationships, cloning, statuses (including Waiting, Blocked, Deferred, and Canceled), priorities, due dates, and explicit completion dates.
 - **Clear top actions** — use **Load Tasks** to open a saved task file. Every top-toolbar action includes a hover tooltip that explains what it does.
+- **Unsaved indicator** — task additions, deletions, and modifications immediately show a red **(unsaved)** marker beside **My Tasks** until Save completes successfully.
 - **Parent task rollups** — parent Estimated Hours, Time Spent, and Estimated Effort Without AI are read-only sums of all child and nested-child tasks. Parent AI Assistance is a read-only Estimated Effort Without AI-weighted average. A parent cannot be completed until every child and nested child is complete.
 - **Terminal-only reporting** — rollups, Weekly Timesheet, and AI Analysis count terminal work tasks only. Parent and intermediate summary tasks never add duplicate hours or AI savings to report totals.
 - **Parent status summary** — parent rows use a compact format such as `In Progress · 1/3`; hover over it for a plain-language explanation, calculated progress, and terminal status counts.
 - **Dependency details and task-grid scrolling** — hover or focus a dependency indicator to view dependency items and their statuses. The task grid supports horizontal scrolling when the browser is narrower than the table.
 - **Readable grid values** — Hours and AI Hours Saved display to one decimal place; AI Hours Saved stays on one line without bold emphasis. The compact **Due** column retains a readable standard font size and shows a self-contained green checkmark when a completed task was on time (or has no due date), or a sad-face icon when it was completed late. The grid does not show a separate Completed date column; hover the icon for completion details.
 - **Clear hierarchy markers** — a green leaf beside Priority identifies a childless sub-task; a brown branch identifies a parent task with child tasks; and a blue standalone-item icon identifies a task with neither a parent nor child tasks. Hover a marker to see its parent-child relationship, including the direct child count or parent task name.
-- **Task-row actions** — Actions are ordered Goto Link, Clone, Create Child Task, Edit, and Delete. Goto Link is blue when Notes has a hyperlink, opens the first link in a new window, and is disabled when Notes has no link.
-- **Filters and views** — search, project/status/due-date filters (including Due Last Week and Due Next Month), Active/Completed/Overdue navigation, a Most Recent view, and hide-completed toggle.
+- **Task-row actions** — Actions are ordered Goto Link, Clone, Create Child Task, Edit, Archive/Unarchive, and Delete. Goto Link is blue when Notes has a hyperlink, opens the first link in a new window, and is disabled when Notes has no link.
+- **Archive** — archive a task after an **Are you sure?** confirmation that names the task and shows how many descendants will be included. Archiving a parent archives all descendants so completed task sets can be retired together. Archived tasks disappear from normal views, reports, and exports, and can be restored from the left-panel **Archive** view with the Unarchive action. Cloning an archived child or adding a child to an archived parent automatically restores the parent chain.
+- **Filters and views** — search, project/status/due-date filters (including Due Last Week and Due Next Month), Active/Completed/Overdue navigation, a Most Recent view, an Archive view, and hide-completed toggle.
 - **Most Recent** — a left-panel view showing up to 10 tasks with the newest creation dates, newest first, after active filters are applied. Hover over it in the app to see the filtering criteria.
 - **Due Next Month** — a Due Date dropdown option that shows tasks due in the next calendar month. It is not a left-panel navigation view.
 - **Due Last Week** — a Due Date dropdown option that shows tasks due in the complete Sunday-through-Saturday week before the current week.
@@ -34,16 +36,16 @@ A local-first, single-file task manager for organizing projects, tracking effort
 - **Completion synchronization** — setting progress to 100% automatically sets Status to Completed; setting Status to Completed automatically sets progress to 100%. Saving prevents either value from being inconsistent with the other.
 - **Completion dates** — a Completed task with no completion date is assigned today's local date. Changing status away from Completed clears the date and automatically reduces 100% progress to 99% so the task is no longer complete; you can then adjust progress as needed. Entering a completion date of today or earlier marks the task Completed automatically. Completion dates remain user-editable.
 - **Progress validation** — a task with progress greater than 0% cannot be saved with a Not Started status; select an active status before recording progress.
-- **Notes** — task rows preview up to five note lines. A bold **...(see more)** link appears for longer notes and opens the task editor; the editor provides an Expand Notes control for comfortable long-note reading and editing.
+- **Notes** — task rows preview up to five note lines; hover a note to view its complete text. A bold **...(see more)** link appears for longer notes and opens the task editor; the editor provides an Expand Notes control for comfortable long-note reading and editing.
 - **Time and AI productivity tracking** — per task, capture:
   - `estimatedHours` — your original estimate
   - `timeSpent` — actual hours worked
   - `aiAssistancePercentage` — how much AI assisted (0–100%)
   - `estimatedEffortWithoutAI` — hours the task would have taken without AI
 - **AI Hours Saved** — computed as `estimatedEffortWithoutAI − timeSpent`; MyTaskAssistant measures AI *productivity*, not AI usage.
-- **🤖 AI Analysis** — a read-only weekly view summarizing AI-assisted tasks: Time Spent, Estimated Effort Without AI, and AI Hours Saved, with totals and a downloadable standalone HTML report.
-- **Weekly Timesheet** — generate a printable, standalone HTML timesheet for any Sunday-through-Saturday week from completed terminal tasks, with editable daily allocations initially placed on each task's completion date.
-- **JSON exports** — export the current filtered view or all active tasks as JSON.
+- **🤖 AI Analysis** — a read-only weekly view summarizing non-archived AI-assisted tasks: Time Spent, Estimated Effort Without AI, and AI Hours Saved, with totals and a downloadable standalone HTML report.
+- **Weekly Timesheet** — generate a printable, standalone HTML timesheet for any Sunday-through-Saturday week from completed non-archived terminal tasks, with editable daily allocations initially placed on each task's completion date.
+- **JSON exports** — export the current filtered view or all active non-archived tasks as JSON. Archived tasks are exported only from the Archive view.
 
 ## Data Format
 
@@ -52,6 +54,7 @@ Task data lives in a single human-readable JSON file that you choose. Time-captu
 ```json
 {
 	"completedDate": "2026-03-20",
+	"archived": false,
   "estimatedHours": 8,
   "timeSpent": 5.5,
   "aiAssistancePercentage": 40,
@@ -59,7 +62,7 @@ Task data lives in a single human-readable JSON file that you choose. Time-captu
 }
 ```
 
-Older files are supported. Load Tasks accepts `tasks`, `taskList`, `items`, or a top-level task array and normalizes common aliases including `hoursSpent`, `actualEffort`, `percentageOfAIAssistance`, `estimatedHumanOnlyEffort`, `estimatedHumanEffort`, `taskStatus`, `progress`, `due`, `targetDate`, `description`, `detail`, `dependencies`, and `parentTaskId`. Imported Completed tasks without `completedDate` use their due date when available. Saves always use the current schema.
+Older files are supported. Load Tasks accepts `tasks`, `taskList`, `items`, or a top-level task array and normalizes common aliases including `hoursSpent`, `actualEffort`, `percentageOfAIAssistance`, `estimatedHumanOnlyEffort`, `estimatedHumanEffort`, `taskStatus`, `progress`, `due`, `targetDate`, `description`, `detail`, `dependencies`, and `parentTaskId`. Imported tasks without `archived` default to `false`. Imported Completed tasks without `completedDate` use their due date when available. Saves always use the current schema.
 
 ## Repository Contents
 
