@@ -1,6 +1,6 @@
 # MyTaskAssistant
 
-**Version:** v4.4.0
+**Version:** v4.5.1
 
 A local-first, single-file task manager for organizing projects, tracking effort, monitoring AI-assisted productivity, and producing weekly HTML timesheets. No installation, no backend, no database, no account — just open one HTML file in a modern browser.
 
@@ -17,7 +17,8 @@ A local-first, single-file task manager for organizing projects, tracking effort
 
 - **Projects and tasks** — organize tasks by project, with subtasks, parent/child relationships, cloning, statuses (including Waiting, Blocked, Deferred, and Canceled), priorities, due dates, and explicit completion dates.
 - **Clear top actions** — use **Load Tasks** to open a saved task file. Every top-toolbar action includes a hover tooltip that explains what it does.
-- **Unsaved indicator** — task additions, deletions, and modifications immediately show a red **(unsaved)** marker beside **My Tasks** until Save completes successfully.
+- **Mirrored bottom actions** — the main toolbar commands, including **+ Add Task**, are repeated below the task grid and call the same command handlers as the top toolbar.
+- **Unsaved indicator** — task additions, deletions, and modifications immediately show a red **(unsaved)** marker beside **My Tasks** and in the left-panel JSON file area until Save completes successfully.
 - **Parent task rollups** — parent Estimated Hours, Time Spent, and Estimated Effort Without AI are read-only sums of all child and nested-child tasks. Parent AI Assistance is a read-only Estimated Effort Without AI-weighted average. A parent cannot be completed until every child and nested child is complete.
 - **Terminal-only reporting** — rollups, Weekly Timesheet, and AI Analysis count terminal work tasks only. Parent and intermediate summary tasks never add duplicate hours or AI savings to report totals.
 - **Parent status summary** — parent rows use a compact format such as `In Progress · 1/3`; hover over it for a plain-language explanation, calculated progress, and terminal status counts.

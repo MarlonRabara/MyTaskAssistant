@@ -1,5 +1,5 @@
 # MyTaskAssistant Specification
-**Application Version:** v4.4.0
+**Application Version:** v4.5.1
 **Last Updated:** 2026-08-01
 
 ## Overview
@@ -50,7 +50,20 @@ Legacy sequence-based names such as `Final_v9` should not be used.
 - Embedded CSS
 - Embedded JavaScript
 - Embedded SVG icons
+- Self-contained favicon
 - No external libraries required
+
+## Self-Contained Favicon
+
+The application includes a favicon in the HTML document using a `data:` URL so no external image file is required.
+
+Requirements:
+
+- The favicon is declared in the `<head>` using a `<link rel="icon">` element.
+- The favicon uses an inline SVG encoded as a `data:image/svg+xml` URL.
+- The icon visually reflects MyTaskAssistant's purpose as a personal task manager.
+- The visual metaphor should include task-oriented imagery such as a checklist, checkmark, task card, or productivity assistant mark.
+- The favicon must remain self-contained and must not reference external `.ico`, `.png`, `.svg`, or web resources.
 
 ## Data
 
@@ -623,9 +636,38 @@ Displays:
 - Application logo
 - Application name
 - Visible application version badge
+- Browser favicon that reflects the task-management purpose of the application
 - When runtime `saved` is `false`, the heading area next to `My Tasks` displays `(unsaved)` in the same font style and size as the `My Tasks` text.
 - The `(unsaved)` indicator is red.
 - When runtime `saved` is `true`, the `(unsaved)` indicator is hidden.
+- The left-panel JSON file information area also displays a red `(unsaved)` indicator when runtime `saved` is `false`.
+- The left-panel `(unsaved)` indicator follows the same state transitions as the `My Tasks` heading indicator: hidden when `saved` is `true`, visible when `saved` is `false`, and updated immediately after task changes, file load, and successful Save.
+
+## Main Toolbar Mirroring
+
+The primary top action bar commands are also available in a mirrored bottom action bar below the task grid.
+
+Mirrored commands:
+
+- Load Tasks
+- Export View
+- Weekly Timesheet
+- 🤖 AI Analysis
+- Export Active
+- Save
+- Projects
+- + Add Task
+
+Behavior and implementation requirements:
+
+- The bottom action bar appears below the grid/workspace area.
+- The bottom action bar uses the same command order as the top action bar.
+- The bottom action bar aligns visually with the top action bar so the page layout remains balanced and aesthetically consistent.
+- The bottom buttons use the same button labels, styling, tooltips, and accessibility intent as the corresponding top buttons.
+- The implementation must not duplicate the command logic behind the buttons.
+- Top and bottom buttons must call the same common JavaScript functions for each command.
+- If a command's behavior changes, updating the shared command function must update both the top and bottom button behavior.
+- The `+ Add Task` button is included in both the top and bottom command bars so a new task can be created even when the user is scrolled to the bottom of the grid.
 
 ## Task Row Actions
 
@@ -1035,3 +1077,22 @@ This permits time spent on blocked, deferred, canceled, or otherwise interrupted
 - A successful Save action sets `saved` to `true`.
 - Adding, deleting, or modifying a task immediately sets `saved` to `false`.
 - When `saved` is `false`, the `My Tasks` heading displays a red `(unsaved)` indicator in the same font style and size as the heading text.
+- The left-panel JSON file information area displays a matching red `(unsaved)` indicator driven by the same runtime `saved` state.
+
+## v4.5.0 Bottom Main Toolbar Mirror
+
+- The commands Load Tasks, Export View, Weekly Timesheet, 🤖 AI Analysis, Export Active, Save, and Projects are mirrored below the task grid.
+- The bottom command bar uses the same order, visual alignment, labels, tooltips, and styling intent as the top command bar.
+- Top and bottom command buttons share common JavaScript command functions; command logic is not duplicated.
+
+## v4.5.1 Add Task Bottom Toolbar Mirror
+
+- The `+ Add Task` command is included in both the top and bottom command bars.
+- Both `+ Add Task` buttons call the same common JavaScript command function.
+- The bottom `+ Add Task` button lets users create a task after scrolling to the bottom of the grid and helps the bottom toolbar visually align with the top toolbar.
+
+## v4.5.2 Self-Contained Favicon
+
+- The application includes a self-contained SVG favicon declared with a `data:image/svg+xml` URL in the HTML `<head>`.
+- The favicon reflects the personal task-manager purpose of the application through task/checklist-oriented imagery.
+- No external favicon image file is required.
