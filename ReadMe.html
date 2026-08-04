@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>MyTaskAssistant v4.6.0 – User Guide</title>
+  <title>MyTaskAssistant v4.6.7 – User Guide</title>
   <style>
     :root {
       --bg: #eef2f7;
@@ -403,7 +403,7 @@
             monitoring AI-assisted productivity, and producing weekly HTML reports.
           </p>
         </div>
-        <div class="version">v4.6.0</div>
+        <div class="version">v4.6.7</div>
       </div>
 
       <div class="hero-grid">
@@ -615,14 +615,14 @@
 
           <h3>Completion</h3>
           <p>
-            A task is treated as complete when its status is <b>Completed</b> or its progress reaches 100%.
-             Estimated Hours and Time Spent must both be greater than zero before any task can be marked complete. Completion also applies the same AI productivity validation used when saving. A parent task cannot be marked complete until all child and nested-child tasks are complete. These rules apply to the checkbox, the task editor's Mark Complete actions, and saving a Completed status or 100% progress. The task editor provides both upper and lower action buttons for convenience.
+             A task is treated as complete when its status is <b>Completed</b>, <b>Closed</b>, or its progress reaches 100%. Closed supports intentionally declined, unnecessary, canceled, or otherwise ended work without presenting it as successfully completed.
+              Completed tasks require Estimated Hours and Time Spent greater than zero. Closed tasks may have zero effort. Before either terminal status is saved, a positive Estimated Effort Without AI value requires an AI Assistance percentage greater than 0%; AI Assistance greater than 0% requires a positive Estimated Effort Without AI value but that estimate may be lower than, equal to, or greater than Time Spent. A parent task cannot enter a terminal status until all child and nested-child tasks are terminal. These rules apply to the checkbox, task-editor actions, and saving a terminal status or 100% progress.
           </p>
            <p>
-             Status and progress stay synchronized: setting progress to <b>100%</b> automatically sets Status to <b>Completed</b>, and setting Status to <b>Completed</b> automatically sets progress to <b>100%</b>. Saving does not permit a mismatched completed state.
+               Status and progress stay synchronized: setting progress to <b>100%</b> automatically sets Status to <b>Completed</b>; setting Status to <b>Completed</b> or <b>Closed</b> automatically sets progress to <b>100%</b>. Saving does not permit a mismatched terminal state.
            </p>
             <p>
-              The editable <b>Completed date</b> records when work finished. A missing date is set to today when a task becomes Completed, while changing to any non-completed status clears it and reduces 100% progress to 99% so the task is no longer complete. You can then adjust progress as needed. Entering a completion date that is today or earlier automatically sets Status to Completed and progress to 100%.
+                The editable <b>Completed date</b> records when work finished or was Closed. A missing date is set to today when a task enters either terminal status, while changing to any non-terminal status clears it and reduces 100% progress to 99% so the task is no longer complete. You can then adjust progress as needed. Entering a completion date that is today or earlier automatically sets Status to Completed and progress to 100%.
             </p>
            <p>
              A task with progress greater than <b>0%</b> cannot be saved with Status set to <b>Not Started</b>. Select an active status before recording progress.
@@ -647,7 +647,7 @@
             </div>
             <div class="card">
               <h3>Due date</h3>
-              <p>Supports Past Due, Due Last Week, Today, Tomorrow, This Week, Next Week, and Due Next Month.</p>
+               <p>Supports Past Due, Due Last Week, Due Yesterday, Today, Tomorrow, This Week, Next Week, and Due Next Month.</p>
             </div>
           </div>
           <div class="callout">
@@ -655,8 +655,8 @@
           </div>
           <p>
             The <b>Hide Completed</b> checkbox can be combined with the other filters. The left navigation also provides All,
-            Active, Completed, Overdue, Most Recent, and Archive views. Most Recent shows up to 10 tasks with the newest creation dates,
-            ordered newest first after active filters are applied. Hover over Most Recent in the app to see its filtering criteria.
+             Active, Completed, Overdue, Most Recent, Recently Created, and Archive views. Most Recent shows up to 10 tasks with the newest creation dates,
+             ordered newest first after active filters are applied. Recently Created shows tasks created during the rolling previous 24 hours, also newest first. Hover over either view in the app to see its filtering criteria.
             Archive is the only view where archived records participate in search and filtering.
           </p>
           <div class="callout">
@@ -665,6 +665,9 @@
           <div class="callout">
             <b>Due Last Week</b> is available in the Due Date dropdown. It includes tasks due in the complete Sunday-through-Saturday calendar week before the current week.
           </div>
+           <div class="callout">
+             <b>Due Yesterday</b> is available in the Due Date dropdown. It includes tasks due exactly on the preceding local calendar day, including completed tasks, and is distinct from Past Due.
+           </div>
         </section>
 
         <section id="effort">
@@ -682,7 +685,7 @@
           <table>
             <thead><tr><th>Field</th><th>Meaning</th></tr></thead>
             <tbody>
-              <tr><td>Estimated Effort Without AI</td><td>Estimate of how long the task would have taken if AI had not been available. Required whenever AI Assistance is greater than 0%, and must be greater than Time Spent.</td></tr>
+              <tr><td>Estimated Effort Without AI</td><td>Estimate of how long the task would have taken if AI had not been available. Required and greater than zero whenever AI Assistance is greater than 0%; it may be lower than, equal to, or greater than Time Spent.</td></tr>
               <tr><td>Time Spent</td><td>The actual hours used to complete or advance the task.</td></tr>
               <tr><td>AI Assistance</td><td>The estimated percentage of work that AI accelerated or meaningfully improved, from 0% to 100%. Record it only when AI produced measurable productivity gains.</td></tr>
             </tbody>
@@ -693,8 +696,16 @@
 
           <div class="callout">
             Example: Estimated Effort Without AI of 9.5 hours and Time Spent of 5.5 hours produces an AI Hours Saved value of 4.00 h.
-            AI Hours Saved is calculated automatically and is never stored in the JSON file.
+             AI Hours Saved may be positive, zero, or negative, is calculated automatically, and is never stored in the JSON file.
           </div>
+
+           <h3>AI Efficiency</h3>
+           <p>
+             The main statistics area shows <b>AI Efficiency</b> after Overall Progress. It is a weighted calculation for qualifying completed or Closed tasks: total Estimated Time Saved divided by total AI-Assisted Hours. It is not an arithmetic average of task percentages.
+           </p>
+           <p>
+             AI Analysis reports the related totals: Estimated Time Saved, AI-Assisted Hours, Overall Time Reduction, Productivity Multiplier, AI Utilization, and Qualifying Task Count. Negative results are valid and indicate that AI-assisted work exceeded the Estimated Effort Without AI for the selected tasks.
+           </p>
 
           <h3>Row tooltips</h3>
           <p>
@@ -967,7 +978,7 @@
     </div>
 
     <footer class="footer">
-      MyTaskAssistant v4.6.0 · Standalone local-first application guide · Generated for distribution with the application package
+      MyTaskAssistant v4.6.7 · Standalone local-first application guide · Generated for distribution with the application package
     </footer>
   </div>
 </body>

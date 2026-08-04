@@ -1519,7 +1519,7 @@
   <path d="M36 32.5v7M32.5 36h7" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/>
 </svg></div>
         <div>
-          <h1>MyTaskAssistant <span class="version-badge">v4.6.0</span></h1>
+          <h1>MyTaskAssistant <span class="version-badge">v4.6.7</span></h1>
           <p>Personal task manager designed by Marlon Rabara</p>
         </div>
       </div>
@@ -1530,6 +1530,7 @@
         <button type="button" id="navCompletedBtn"><span>Completed</span><span id="navCompleted">0</span></button>
         <button type="button" id="navOverdueBtn"><span>Overdue</span><span id="navOverdue">0</span></button>
         <button type="button" id="navMostRecentBtn" title="Shows the 10 tasks with the newest created dates, ordered from most recently created to least recently created."><span>Most Recent</span><span id="navMostRecent">0</span></button>
+        <button type="button" id="navRecentlyCreatedBtn" title="Shows tasks created during the last 24 hours."><span>Recently Created</span><span id="navRecentlyCreated">0</span></button>
         <button type="button" id="navArchiveBtn" title="Shows archived task records. Archived tasks are hidden from normal views, timesheets, and AI Analysis."><span>Archive</span><span id="navArchive">0</span></button>
       </nav>
 
@@ -1579,6 +1580,11 @@
           <div class="metric-value" id="metricProgress">0%</div>
           <div class="metric-detail">Average completion</div>
         </article>
+        <article class="metric" title="Weighted average AI efficiency based on AI-assisted hours. Estimated human hours saved per AI-assisted hour.">
+          <div class="metric-label">AI Efficiency</div>
+          <div class="metric-value" id="metricAiEfficiency">0%</div>
+          <div class="metric-detail" id="metricAiEfficiencyDetail">No qualifying AI-assisted work</div>
+        </article>
       </section>
 
       <section class="workspace">
@@ -1592,6 +1598,7 @@
             <option value="Waiting">Waiting</option>
             <option value="Blocked">Blocked</option>
             <option value="Completed">Completed</option>
+            <option value="Closed">Closed</option>
           </select>
           <select class="select" id="projectFilter" aria-label="Filter by project">
             <option value="all">All projects</option>
@@ -1600,6 +1607,7 @@
             <option value="all">All due dates</option>
             <option value="past-due">Past Due</option>
             <option value="last-week">Due Last Week</option>
+            <option value="yesterday">Due Yesterday</option>
             <option value="today">Due Today</option>
             <option value="tomorrow">Due Tomorrow</option>
             <option value="this-week">Due This Week</option>
@@ -1740,6 +1748,7 @@
           <option>Deferred</option>
           <option>Canceled</option>
           <option>Completed</option>
+          <option>Closed</option>
         </select>
       </div>
       <div class="form-group">
@@ -1756,8 +1765,8 @@
           <input class="field" id="taskHoursInput" type="number" min="0" step="0.25" value="0" placeholder="Example: 1.5" />
         </div>
         <div class="form-group">
-          <label for="estimatedEffortWithoutAIInput" title="Estimate how long this task would have taken if AI had not been available.&#10;&#10;Required whenever AI Assistance is greater than 0%.&#10;&#10;This value must be greater than Time Spent.">Estimated Effort Without AI (hours)</label>
-          <input class="field" id="estimatedEffortWithoutAIInput" type="number" min="0" step="0.25" placeholder="Example: 8.0" title="Estimate how long this task would have taken if AI had not been available.&#10;&#10;Required whenever AI Assistance is greater than 0%.&#10;&#10;This value must be greater than Time Spent." />
+          <label for="estimatedEffortWithoutAIInput" title="Estimate how long this task would have taken if AI had not been available.&#10;&#10;Required and greater than zero whenever AI Assistance is greater than 0%.">Estimated Effort Without AI (hours)</label>
+          <input class="field" id="estimatedEffortWithoutAIInput" type="number" min="0" step="0.25" placeholder="Example: 8.0" title="Estimate how long this task would have taken if AI had not been available.&#10;&#10;Required and greater than zero whenever AI Assistance is greater than 0%." />
           <div class="typeahead-helper">Estimate how long this task would have taken if AI had not been available. Required whenever AI Assistance is greater than 0%.</div>
         </div>
       </div>
@@ -1893,7 +1902,7 @@
     let selectedDependencyIds = [];
     let saved = true;
 
-    const APPLICATION_VERSION = "v4.6.0";
+    const APPLICATION_VERSION = "v4.6.7";
 
     const $ = (id) => document.getElementById(id);
 
@@ -1948,7 +1957,8 @@
 
     function normalizeTask(task) {
       task = task && typeof task === "object" ? task : {};
-      const status = task.status ?? task.taskStatus ?? "Not Started";
+      const rawStatus = task.status ?? task.taskStatus ?? "Not Started";
+      const status = rawStatus === "Won't Do" ? "Closed" : rawStatus;
       const dueDate = task.dueDate ?? task.due ?? task.targetDate ?? "";
       const completedDate = String(task.completedDate ?? "").slice(0, 10);
       const archived = task.archived === true || String(task.archived).toLowerCase() === "true";
@@ -1998,7 +2008,11 @@
         })(),
         priorityOrder: Number.isFinite(Number(task.priorityOrder)) ? Math.max(1, Number(task.priorityOrder)) : 999999,
         dueDate,
-        completedDate: status === "Completed" && !completedDate ? dueDate : completedDate,
+        completedDate: status === "Closed" && !completedDate
+          ? isoDateLocal(new Date())
+          : status === "Completed" && !completedDate
+            ? dueDate
+            : completedDate,
         archived,
         notes: task.notes ?? task.description ?? task.detail ?? "",
         dependsOn: Array.isArray(task.dependsOn ?? task.dependencies) ? (task.dependsOn ?? task.dependencies).map(String) : [],
@@ -2043,7 +2057,7 @@
     }
 
     function isComplete(task) {
-      return task.status === "Completed" || Number(task.percentComplete) >= 100;
+      return task.status === "Completed" || task.status === "Closed" || Number(task.percentComplete) >= 100;
     }
 
     function daysRemaining(dueDate) {
@@ -2215,6 +2229,12 @@
         .slice(0, limit);
     }
 
+    function createdWithinLast24Hours(task, now = new Date()) {
+      const createdAt = new Date(task.createdAt);
+      if (Number.isNaN(createdAt.getTime())) return false;
+      return createdAt.getTime() >= now.getTime() - 24 * 60 * 60 * 1000 && createdAt.getTime() <= now.getTime();
+    }
+
     function childTasks(parentId, archived = null) {
       return data.tasks.filter(task => task.parentId === parentId && (archived === null || Boolean(task.archived) === Boolean(archived)));
     }
@@ -2274,9 +2294,47 @@
       const effortWithoutAI = Number(task.estimatedEffortWithoutAI);
       const timeSpent = Number(task.timeSpent);
       const aiAssistance = Number(task.aiAssistancePercentage || 0);
-      return aiAssistance > 0 && Number.isFinite(effortWithoutAI) && effortWithoutAI > timeSpent && Number.isFinite(timeSpent)
+      return aiAssistance > 0 && Number.isFinite(effortWithoutAI) && effortWithoutAI > 0 && Number.isFinite(timeSpent)
         ? effortWithoutAI - timeSpent
         : null;
+    }
+
+    function calculateAiEfficiencyMetrics(tasks, { terminalOnly = true } = {}) {
+      const metrics = {
+        qualifyingTaskCount: 0,
+        totalTimeSpent: 0,
+        totalEstimatedEffortWithoutAI: 0,
+        totalAiAssistedHours: 0,
+        totalEstimatedTimeSaved: 0,
+        averageAiEfficiency: 0,
+        overallTimeReduction: 0,
+        productivityMultiplier: 0,
+        aiUtilization: 0
+      };
+
+      tasks.forEach(task => {
+        const timeSpent = Number(task.timeSpent);
+        const aiAssistance = Number(task.aiAssistancePercentage ?? 0);
+        const estimatedEffortWithoutAI = Number(task.estimatedEffortWithoutAI);
+        const isTerminal = task.status === "Completed" || task.status === "Closed";
+        if (!Number.isFinite(timeSpent) || timeSpent <= 0 || !Number.isFinite(aiAssistance) || aiAssistance < 0 || aiAssistance > 100 || !Number.isFinite(estimatedEffortWithoutAI) || estimatedEffortWithoutAI <= 0 || (terminalOnly && !isTerminal)) return;
+        if (aiAssistance <= 0) return;
+
+        const aiAssistedHours = timeSpent * (aiAssistance / 100);
+        metrics.qualifyingTaskCount += 1;
+        metrics.totalTimeSpent += timeSpent;
+        metrics.totalEstimatedEffortWithoutAI += estimatedEffortWithoutAI;
+        metrics.totalAiAssistedHours += aiAssistedHours;
+        metrics.totalEstimatedTimeSaved += estimatedEffortWithoutAI - timeSpent;
+      });
+
+      if (metrics.totalAiAssistedHours > 0) {
+        metrics.averageAiEfficiency = (metrics.totalEstimatedTimeSaved / metrics.totalAiAssistedHours) * 100;
+        metrics.overallTimeReduction = (metrics.totalEstimatedTimeSaved / metrics.totalEstimatedEffortWithoutAI) * 100;
+        metrics.productivityMultiplier = metrics.totalEstimatedEffortWithoutAI / metrics.totalTimeSpent;
+        metrics.aiUtilization = (metrics.totalAiAssistedHours / metrics.totalTimeSpent) * 100;
+      }
+      return metrics;
     }
 
     function taskRollup(task) {
@@ -2293,13 +2351,14 @@
         ? terminals.reduce((total, child) => total + Number(child.percentComplete || 0), 0) / terminals.length
         : terminals.reduce((total, child) => total + (Number(child.percentComplete || 0) * Number(child.estimatedHours || 0)), 0) / estimatedHours;
       const allCompleted = terminals.every(child => isComplete(child));
+      const allClosed = terminals.every(child => child.status === "Closed");
       const allNotStarted = terminals.every(child => child.status === "Not Started" && Number(child.percentComplete || 0) === 0);
       const allCanceled = terminals.every(child => child.status === "Canceled");
       const unfinished = terminals.filter(child => !isComplete(child) && child.status !== "Canceled");
       const hasInProgress = unfinished.some(child => child.status === "In Progress");
       const allBlocked = unfinished.length > 0 && unfinished.every(child => child.status === "Blocked" || (Array.isArray(child.dependsOn) && child.dependsOn.some(id => !isComplete(data.tasks.find(candidate => candidate.id === id) || {}))));
       const allDeferred = unfinished.length > 0 && unfinished.every(child => child.status === "Deferred");
-      const status = allCompleted ? "Completed" : allCanceled ? "Canceled" : allNotStarted ? "Not Started" : allBlocked && !hasInProgress ? "Blocked" : allDeferred && !hasInProgress ? "Deferred" : "In Progress";
+      const status = allClosed ? "Closed" : allCompleted ? "Completed" : allCanceled ? "Canceled" : allNotStarted ? "Not Started" : allBlocked && !hasInProgress ? "Blocked" : allDeferred && !hasInProgress ? "Deferred" : "In Progress";
       const validAiTasks = terminals.map(child => validAiHoursSaved(child)).filter(value => value !== null);
       const weightedAIAssistance = aiWeightTotal > 0
         ? aiWeightedTasks.reduce((total, child) => total + (Number(child.aiAssistancePercentage || 0) * Number(child.estimatedEffortWithoutAI || 0)), 0) / aiWeightTotal
@@ -2361,7 +2420,7 @@ Calculated AI Assistance: ${percentage}%`;
     function canCompleteTask(task) {
       if (!hasIncompleteDescendants(task)) return true;
       const incompleteCount = terminalDescendantTasks(task).filter(child => !isComplete(child)).length;
-      alert(`This task cannot be completed because ${incompleteCount} sub-task${incompleteCount === 1 ? "" : "s"} remain incomplete. Review the Sub-Tasks tab.`);
+      alert(`This task cannot be moved to a terminal status because ${incompleteCount} sub-task${incompleteCount === 1 ? "" : "s"} remain incomplete. Review the Sub-Tasks tab.`);
       return false;
     }
 
@@ -2377,8 +2436,24 @@ Calculated AI Assistance: ${percentage}%`;
         alert("Estimated Hours and Time Spent must both be greater than zero before a task can be marked complete.");
         return false;
       }
-      if (aiAssistance > 0 && (effortWithoutAI === null || effortWithoutAI === undefined || !(Number(effortWithoutAI) > timeSpent))) {
-        alert("Estimated Effort Without AI must be greater than Time Spent whenever AI Assistance is greater than 0%.\n\nAI Assistance represents measurable productivity gains.");
+      if (aiAssistance > 0 && (effortWithoutAI === null || effortWithoutAI === undefined || !(Number(effortWithoutAI) > 0))) {
+        alert("Estimated Effort Without AI must be greater than zero whenever AI Assistance is greater than 0%.\n\nAI Assistance represents measurable productivity gains.");
+        return false;
+      }
+      if (Number(effortWithoutAI) > 0 && !(aiAssistance > 0)) {
+        alert("AI Assistance must be greater than 0% whenever Estimated Effort Without AI is provided before a task can be marked complete.");
+        return false;
+      }
+      return true;
+    }
+
+    function validateTerminalStatusAI(effortWithoutAI, timeSpent, aiAssistance, requiresTerminalValidation) {
+      if (requiresTerminalValidation && effortWithoutAI !== null && effortWithoutAI !== undefined && Number(effortWithoutAI) > 0 && !(Number(aiAssistance) > 0)) {
+        alert("AI Assistance must be greater than 0% whenever Estimated Effort Without AI is provided before a task can be completed or closed.");
+        return false;
+      }
+      if (Number(aiAssistance) > 0 && (effortWithoutAI === null || effortWithoutAI === undefined || !(Number(effortWithoutAI) > 0))) {
+        alert("Estimated Effort Without AI must be greater than zero whenever AI Assistance is greater than 0%.\n\nAI Assistance represents measurable productivity gains.");
         return false;
       }
       return true;
@@ -2394,14 +2469,14 @@ Calculated AI Assistance: ${percentage}%`;
         statusInput.value = "Completed";
         progressInput.value = 100;
       }
-      if (source === "status" && statusInput.value === "Completed") {
+      if (source === "status" && (statusInput.value === "Completed" || statusInput.value === "Closed")) {
         progressInput.value = 100;
       }
       if (source === "progress" && Number(progressInput.value || 0) >= 100) {
         progressInput.value = 100;
         statusInput.value = "Completed";
       }
-      if (statusInput.value !== "Completed") {
+      if (statusInput.value !== "Completed" && statusInput.value !== "Closed") {
         if (Number(progressInput.value || 0) >= 100) {
           progressInput.value = 99;
         }
@@ -2493,6 +2568,17 @@ Calculated AI Assistance: ${percentage}%`;
       return due >= lastWeekStart && due < thisWeekStart;
     }
 
+    function isDueYesterday(dueDate) {
+      if (!dueDate) return false;
+      const due = new Date(`${dueDate}T00:00:00`);
+      if (Number.isNaN(due.getTime())) return false;
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      const yesterday = new Date(today);
+      yesterday.setDate(today.getDate() - 1);
+      return due.getTime() === yesterday.getTime();
+    }
+
     function filteredTasks() {
       const q = $("searchInput").value.trim().toLowerCase();
       const status = $("statusFilter").value;
@@ -2513,6 +2599,7 @@ Calculated AI Assistance: ${percentage}%`;
         const dueDays = daysRemaining(task.dueDate);
         if (dueDateFilter === "past-due" && !(dueDays !== null && dueDays < 0 && !isComplete(task))) return false;
         if (dueDateFilter === "last-week" && !isDueLastWeek(task.dueDate)) return false;
+        if (dueDateFilter === "yesterday" && !isDueYesterday(task.dueDate)) return false;
         if (dueDateFilter === "today" && dueDays !== 0) return false;
         if (dueDateFilter === "tomorrow" && dueDays !== 1) return false;
 
@@ -2524,6 +2611,7 @@ Calculated AI Assistance: ${percentage}%`;
         if (forcedView === "active" && isComplete(task)) return false;
         if (forcedView === "completed" && !isComplete(task)) return false;
         if (forcedView === "overdue" && !(daysRemaining(task.dueDate) < 0 && !isComplete(task))) return false;
+        if (forcedView === "recently-created" && !createdWithinLast24Hours(task)) return false;
         return true;
       });
     }
@@ -2557,17 +2645,23 @@ Calculated AI Assistance: ${percentage}%`;
       const active = total - completed;
       const overdue = activeTaskSet.filter(t => !isComplete(t) && daysRemaining(t.dueDate) < 0).length;
       const average = total ? Math.round(activeTaskSet.reduce((sum, t) => sum + Number(t.percentComplete || 0), 0) / total) : 0;
+      const aiMetrics = calculateAiEfficiencyMetrics(activeTaskSet);
 
       $("metricTotal").textContent = total;
       $("metricActive").textContent = active;
       $("metricOverdue").textContent = overdue;
       $("metricProgress").textContent = average + "%";
+      $("metricAiEfficiency").textContent = `${aiMetrics.averageAiEfficiency.toFixed(1)}%`;
+      $("metricAiEfficiencyDetail").textContent = aiMetrics.qualifyingTaskCount
+        ? `${aiMetrics.qualifyingTaskCount} qualifying terminal task${aiMetrics.qualifyingTaskCount === 1 ? "" : "s"}`
+        : "No qualifying AI-assisted work";
 
       $("navAll").textContent = total;
       $("navActive").textContent = active;
       $("navCompleted").textContent = completed;
       $("navOverdue").textContent = overdue;
       $("navMostRecent").textContent = Math.min(total, 10);
+      $("navRecentlyCreated").textContent = activeTaskSet.filter(task => createdWithinLast24Hours(task)).length;
       $("navArchive").textContent = archived;
     }
 
@@ -2670,6 +2764,10 @@ Calculated AI Assistance: ${percentage}%`;
 
     function completionTimingIndicator(task) {
       if (!task.completedDate) return "";
+      if (task.status === "Closed") {
+        const label = `Closed ${formatDate(task.completedDate)}.`;
+        return `<span class="completion-timing-icon" title="${escapeHtml(label)}" aria-label="${escapeHtml(label)}" role="img">—</span>`;
+      }
       const completedOnTime = !task.dueDate || task.completedDate <= task.dueDate;
       const label = !task.dueDate
         ? `Completed ${formatDate(task.completedDate)}. No due date was set.`
@@ -2687,9 +2785,11 @@ Calculated AI Assistance: ${percentage}%`;
       const matchedTasks = filteredTasks();
       const baseTasks = forcedView === "most-recent"
         ? mostRecentTasks(matchedTasks)
-        : matchedTasks;
+        : forcedView === "recently-created"
+          ? mostRecentTasks(matchedTasks, Number.POSITIVE_INFINITY)
+          : matchedTasks;
       const tasks = tasksWithVisibleParents(baseTasks);
-      const orderedEntries = forcedView === "most-recent"
+      const orderedEntries = forcedView === "most-recent" || forcedView === "recently-created"
         ? mostRecentTasks(tasks, Number.POSITIVE_INFINITY).map(task => ({ task, depth: taskDepth(task) }))
         : orderedTaskTree(tasks);
       if (!orderedEntries.length) {
@@ -3442,17 +3542,18 @@ Calculated AI Assistance: ${percentage}%`;
       synchronizeCompletionFields("status");
       synchronizeCompletionFields("progress");
 
+      const terminalStatus = ["Completed", "Closed"].includes($("taskStatusInput").value);
       const statusIsCompleted = $("taskStatusInput").value === "Completed";
       const progressIsComplete = Number($("taskProgressInput").value || 0) >= 100;
       if ($("taskStatusInput").value === "Not Started" && Number($("taskProgressInput").value || 0) > 0) {
         alert("A task with progress greater than 0% cannot have a Not Started status.");
         return;
       }
-      if (statusIsCompleted !== progressIsComplete) {
-        alert("Completed tasks must have 100% progress, and tasks at 100% progress must have a Completed status.");
+      if (terminalStatus !== progressIsComplete) {
+        alert("Completed and Closed tasks must have 100% progress, and tasks at 100% progress must have a terminal status.");
         return;
       }
-      if (existing && statusIsCompleted && !canCompleteTask(existing)) return;
+      if (existing && terminalStatus && !canCompleteTask(existing)) return;
 
       const aiAssistanceValue = Math.max(0, Math.min(100, Number($("percentageOfAIAssistanceInput").value || 0)));
       const effortWithoutAIRaw = $("estimatedEffortWithoutAIInput").value;
@@ -3460,17 +3561,16 @@ Calculated AI Assistance: ${percentage}%`;
       const timeSpentValue = Math.max(0, Number($("taskHoursInput").value || 0));
       const estimatedHoursRaw = $("estimatedHoursInput").value;
       const estimatedHoursValue = estimatedHoursRaw === "" ? null : Math.max(0, Number(estimatedHoursRaw));
-      const completingTask = statusIsCompleted;
+      const completingTask = terminalStatus;
 
       const completionEstimatedHours = hasChildTasks ? rollup.estimatedHours : estimatedHoursValue;
       const completionTimeSpent = hasChildTasks ? rollup.timeSpent : timeSpentValue;
-      if (completingTask && (!(completionEstimatedHours > 0) || !(completionTimeSpent > 0))) {
+      if (statusIsCompleted && (!(completionEstimatedHours > 0) || !(completionTimeSpent > 0))) {
         alert("Estimated Hours and Time Spent must both be greater than zero before a task can be marked complete.");
         return;
       }
 
-      if (aiAssistanceValue > 0 && (effortWithoutAIValue === null || !(effortWithoutAIValue > timeSpentValue))) {
-        alert("Estimated Effort Without AI must be greater than Time Spent whenever AI Assistance is greater than 0%.\n\nAI Assistance represents measurable productivity gains.");
+      if (!validateTerminalStatusAI(effortWithoutAIValue, timeSpentValue, aiAssistanceValue, completingTask)) {
         return;
       }
 
@@ -3495,8 +3595,8 @@ Calculated AI Assistance: ${percentage}%`;
         updatedAt: new Date().toISOString()
       });
 
-      if ((task.status === "Completed") !== (task.percentComplete === 100)) {
-        alert("Completed tasks must have 100% progress, and tasks at 100% progress must have a Completed status.");
+      if (["Completed", "Closed"].includes(task.status) !== (task.percentComplete === 100)) {
+        alert("Completed and Closed tasks must have 100% progress, and tasks at 100% progress must have a terminal status.");
         return;
       }
 
@@ -3524,42 +3624,55 @@ Calculated AI Assistance: ${percentage}%`;
       weekEnd.setDate(weekEnd.getDate() + 6);
       const rows = data.tasks.filter(task => {
         if (task.archived) return false;
-        if (!task.dueDate || task.status === "Not Started") return false;
+        if (hasChildren(task) || !task.dueDate || !["Completed", "Closed"].includes(task.status)) return false;
         const due = new Date(`${task.dueDate}T00:00:00`);
-        return due >= weekStart && due <= weekEnd && Number(task.timeSpent || 0) > 0 && Number(task.aiAssistancePercentage || 0) > 0 && task.estimatedEffortWithoutAI !== null && task.estimatedEffortWithoutAI !== undefined && task.estimatedEffortWithoutAI !== "";
+        const timeSpent = Number(task.timeSpent);
+        const aiAssistance = Number(task.aiAssistancePercentage ?? 0);
+        const withoutAI = Number(task.estimatedEffortWithoutAI);
+        return due >= weekStart && due <= weekEnd && Number.isFinite(timeSpent) && timeSpent > 0 && Number.isFinite(aiAssistance) && aiAssistance > 0 && aiAssistance <= 100 && Number.isFinite(withoutAI) && withoutAI > 0;
       }).map(task => ({
         project: projectNameById(task.projectId) || "—",
         task: task.title,
         timeSpent: Number(task.timeSpent || 0),
         aiAssistance: Number(task.aiAssistancePercentage || 0),
         withoutAI: Number(task.estimatedEffortWithoutAI || 0),
+        aiHours: Number(task.timeSpent || 0) * (Number(task.aiAssistancePercentage || 0) / 100),
         saved: Number(task.estimatedEffortWithoutAI || 0) - Number(task.timeSpent || 0)
       }));
-      return { weekStart, weekEnd, rows };
+      const metrics = calculateAiEfficiencyMetrics(
+        rows.map(row => ({
+          timeSpent: row.timeSpent,
+          aiAssistancePercentage: row.aiAssistance,
+          estimatedEffortWithoutAI: row.withoutAI,
+          status: "Completed"
+        }))
+      );
+      return { weekStart, weekEnd, rows, metrics };
     }
 
     function renderAiAnalysis() {
       const model = currentAiAnalysisModel;
       if (!model || !model.rows.length) {
         $("aiAnalysisSummary").innerHTML = "";
-        $("aiAnalysisPreview").innerHTML = '<div class="timesheet-empty">No eligible AI-assisted tasks were found for this week.</div>';
+        $("aiAnalysisPreview").innerHTML = '<div class="timesheet-empty">No qualifying AI-assisted completed or closed tasks were found for this week.</div>';
         $("downloadAiAnalysisHtmlBtn").disabled = true;
         return;
       }
-      const totalTime = model.rows.reduce((s,r)=>s+r.timeSpent,0);
-      const totalWithoutAI = model.rows.reduce((s,r)=>s+r.withoutAI,0);
-      const totalSaved = model.rows.reduce((s,r)=>s+r.saved,0);
+      const metrics = model.metrics;
       $("aiAnalysisSummary").innerHTML = `
-        <span class="timesheet-summary-badge">Tasks Using AI: <strong>${model.rows.length}</strong></span>
-        <span class="timesheet-summary-badge">Time Spent: <strong>${totalTime.toFixed(2)}</strong></span>
-        <span class="timesheet-summary-badge">Without AI: <strong>${totalWithoutAI.toFixed(2)}</strong></span>
-        <span class="timesheet-summary-badge">AI Hours Saved: <strong>${totalSaved.toFixed(2)}</strong></span>`;
+        <span class="timesheet-summary-badge" title="Weighted average AI efficiency based on AI-assisted hours.">AI Efficiency: <strong>${metrics.averageAiEfficiency.toFixed(2)}%</strong></span>
+        <span class="timesheet-summary-badge">Estimated Time Saved: <strong>${metrics.totalEstimatedTimeSaved.toFixed(2)} h</strong></span>
+        <span class="timesheet-summary-badge">AI-Assisted Hours: <strong>${metrics.totalAiAssistedHours.toFixed(2)} h</strong></span>
+        <span class="timesheet-summary-badge">Time Reduction: <strong>${metrics.overallTimeReduction.toFixed(2)}%</strong></span>
+        <span class="timesheet-summary-badge">Productivity: <strong>${metrics.productivityMultiplier.toFixed(2)}×</strong></span>
+        <span class="timesheet-summary-badge">AI Utilization: <strong>${metrics.aiUtilization.toFixed(2)}%</strong></span>
+        <span class="timesheet-summary-badge">Qualifying Tasks: <strong>${metrics.qualifyingTaskCount}</strong></span>`;
       $("aiAnalysisPreview").innerHTML = `
         <h3>AI Analysis</h3>
         <p>${escapeHtml(formatTimesheetDate(model.weekStart))} – ${escapeHtml(formatTimesheetDate(model.weekEnd))}</p>
-        <table><thead><tr><th>Project</th><th>Task</th><th>Time Spent</th><th>Without AI</th><th title="AI Hours Saved — Estimated Effort Without AI minus Time Spent">AI Hours Saved</th></tr></thead>
-        <tbody>${model.rows.map(r=>`<tr><td>${escapeHtml(r.project)}</td><td>${escapeHtml(r.task)}</td><td>${r.timeSpent.toFixed(2)}</td><td>${r.withoutAI.toFixed(2)}</td><td>${r.saved.toFixed(2)}</td></tr>`).join("")}</tbody>
-        <tfoot><tr><th colspan="2">Grand Total</th><th>${totalTime.toFixed(2)}</th><th>${totalWithoutAI.toFixed(2)}</th><th>${totalSaved.toFixed(2)}</th></tr></tfoot></table>`;
+        <table><thead><tr><th>Project</th><th>Task</th><th>Time Spent</th><th>AI %</th><th>AI-Assisted Hours</th><th>Without AI</th><th>Estimated Time Saved</th><th>AI Efficiency</th></tr></thead>
+        <tbody>${model.rows.map(r=>`<tr><td>${escapeHtml(r.project)}</td><td>${escapeHtml(r.task)}</td><td>${r.timeSpent.toFixed(2)}</td><td>${r.aiAssistance.toFixed(0)}%</td><td>${r.aiHours.toFixed(2)}</td><td>${r.withoutAI.toFixed(2)}</td><td>${r.saved.toFixed(2)}</td><td>${((r.saved / r.aiHours) * 100).toFixed(2)}%</td></tr>`).join("")}</tbody>
+        <tfoot><tr><th colspan="4">Weighted totals</th><th>${metrics.totalAiAssistedHours.toFixed(2)}</th><th>${metrics.totalEstimatedEffortWithoutAI.toFixed(2)}</th><th>${metrics.totalEstimatedTimeSaved.toFixed(2)}</th><th>${metrics.averageAiEfficiency.toFixed(2)}%</th></tr></tfoot></table>`;
       $("downloadAiAnalysisHtmlBtn").disabled = false;
     }
 
@@ -3576,8 +3689,8 @@ Calculated AI Assistance: ${percentage}%`;
     }
 
     function standaloneAiAnalysisHtml(model) {
-      const totalTime = model.rows.reduce((s,r)=>s+r.timeSpent,0), totalWithoutAI=model.rows.reduce((s,r)=>s+r.withoutAI,0), totalSaved=model.rows.reduce((s,r)=>s+r.saved,0);
-      return `<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><title>AI Analysis ${isoDateLocal(model.weekStart)}</title><style>body{font-family:Segoe UI,Arial,sans-serif;margin:32px;color:#172033}table{border-collapse:collapse;width:100%}th,td{border:1px solid #ccd3dd;padding:8px;text-align:left}th{background:#eef2f7}.summary{display:flex;gap:12px;flex-wrap:wrap;margin:16px 0}.summary span{border:1px solid #ccd3dd;border-radius:8px;padding:8px 12px}</style></head><body><h1>AI Analysis</h1><p>${formatTimesheetDate(model.weekStart)} – ${formatTimesheetDate(model.weekEnd)}</p><div class="summary"><span>Tasks Using AI: <strong>${model.rows.length}</strong></span><span>Time Spent: <strong>${totalTime.toFixed(2)}</strong></span><span>Without AI: <strong>${totalWithoutAI.toFixed(2)}</strong></span><span>AI Hours Saved: <strong>${totalSaved.toFixed(2)}</strong></span></div><table><thead><tr><th>Project</th><th>Task</th><th>Time Spent</th><th>Without AI</th><th>AI Hours Saved</th></tr></thead><tbody>${model.rows.map(r=>`<tr><td>${escapeHtml(r.project)}</td><td>${escapeHtml(r.task)}</td><td>${r.timeSpent.toFixed(2)}</td><td>${r.withoutAI.toFixed(2)}</td><td>${r.saved.toFixed(2)}</td></tr>`).join("")}</tbody><tfoot><tr><th colspan="2">Grand Total</th><th>${totalTime.toFixed(2)}</th><th>${totalWithoutAI.toFixed(2)}</th><th>${totalSaved.toFixed(2)}</th></tr></tfoot></table></body></html>`;
+      const m = model.metrics;
+      return `<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><title>AI Analysis ${isoDateLocal(model.weekStart)}</title><style>body{font-family:Segoe UI,Arial,sans-serif;margin:32px;color:#172033}table{border-collapse:collapse;width:100%}th,td{border:1px solid #ccd3dd;padding:8px;text-align:left}th{background:#eef2f7}.summary{display:flex;gap:12px;flex-wrap:wrap;margin:16px 0}.summary span{border:1px solid #ccd3dd;border-radius:8px;padding:8px 12px}</style></head><body><h1>AI Analysis</h1><p>${formatTimesheetDate(model.weekStart)} – ${formatTimesheetDate(model.weekEnd)}</p><div class="summary"><span>Average AI Efficiency: <strong>${m.averageAiEfficiency.toFixed(2)}%</strong></span><span>Estimated Time Saved: <strong>${m.totalEstimatedTimeSaved.toFixed(2)} h</strong></span><span>AI-Assisted Hours: <strong>${m.totalAiAssistedHours.toFixed(2)} h</strong></span><span>Overall Time Reduction: <strong>${m.overallTimeReduction.toFixed(2)}%</strong></span><span>Productivity Multiplier: <strong>${m.productivityMultiplier.toFixed(2)}×</strong></span><span>AI Utilization: <strong>${m.aiUtilization.toFixed(2)}%</strong></span><span>Qualifying Tasks: <strong>${m.qualifyingTaskCount}</strong></span></div><table><thead><tr><th>Project</th><th>Task</th><th>Time Spent</th><th>AI %</th><th>AI-Assisted Hours</th><th>Without AI</th><th>Estimated Time Saved</th><th>AI Efficiency</th></tr></thead><tbody>${model.rows.map(r=>`<tr><td>${escapeHtml(r.project)}</td><td>${escapeHtml(r.task)}</td><td>${r.timeSpent.toFixed(2)}</td><td>${r.aiAssistance.toFixed(0)}%</td><td>${r.aiHours.toFixed(2)}</td><td>${r.withoutAI.toFixed(2)}</td><td>${r.saved.toFixed(2)}</td><td>${((r.saved/r.aiHours)*100).toFixed(2)}%</td></tr>`).join("")}</tbody><tfoot><tr><th colspan="4">Weighted totals</th><th>${m.totalAiAssistedHours.toFixed(2)}</th><th>${m.totalEstimatedEffortWithoutAI.toFixed(2)}</th><th>${m.totalEstimatedTimeSaved.toFixed(2)}</th><th>${m.averageAiEfficiency.toFixed(2)}%</th></tr></tfoot></table></body></html>`;
     }
 
     function downloadAiAnalysisHtml() {
@@ -3958,6 +4071,7 @@ Calculated AI Assistance: ${percentage}%`;
         completed: $("navCompletedBtn"),
         overdue: $("navOverdueBtn"),
         "most-recent": $("navMostRecentBtn"),
+        "recently-created": $("navRecentlyCreatedBtn"),
         archive: $("navArchiveBtn")
       };
       (map[view] || document.querySelector(".nav button")).classList.add("active");
@@ -4039,6 +4153,7 @@ Calculated AI Assistance: ${percentage}%`;
     $("navCompletedBtn").addEventListener("click", () => setView("completed"));
     $("navOverdueBtn").addEventListener("click", () => setView("overdue"));
     $("navMostRecentBtn").addEventListener("click", () => setView("most-recent"));
+    $("navRecentlyCreatedBtn").addEventListener("click", () => setView("recently-created"));
     $("navArchiveBtn").addEventListener("click", () => setView("archive"));
     document.querySelector(".nav button").addEventListener("click", () => setView("all"));
 

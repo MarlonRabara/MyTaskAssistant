@@ -1,5 +1,5 @@
 # MyTaskAssistant Specification
-**Application Version:** v4.6.0
+**Application Version:** v4.6.7
 **Last Updated:** 2026-08-01
 
 ## Overview
@@ -138,6 +138,29 @@ Parent rows use calculated Estimated Hours, Time Spent, Estimated Effort Without
 
 A parent task cannot be marked `Completed` until every terminal descendant task is complete. This is enforced through the task-row completion checkbox, the task-editor Mark Complete actions, and saving the parent with status `Completed` or 100% progress. The parent completion controls are disabled while terminal work remains incomplete and direct the user to the Sub-Tasks tab.
 
+## Closed Status
+
+`Closed` is a terminal task status for work that has been intentionally declined, canceled without completion, determined to be unnecessary, or otherwise ended without successful completion. It lets users close a task without representing it as successfully completed.
+
+- `Closed` is available anywhere a task status can be selected.
+- Setting Status to `Closed` sets `percentComplete` to `100` and assigns `completedDate` to the current local date when it is blank, using the same synchronization behavior as `Completed`.
+- A task whose status is `Closed` is treated as complete for completion checks, parent rollups, parent completion eligibility, active/completed filtering, overdue calculations, export/report inclusion, and dependency-satisfaction logic.
+- A task with `percentComplete` at `100` is still synchronized to Status `Completed`; users must explicitly select `Closed` when that distinction is intended.
+- Moving a `Closed` task to any non-terminal status clears `completedDate` and reduces `percentComplete` from `100` to `99`, matching the existing behavior for moving a completed task back to active work.
+- Unlike `Completed`, `Closed` does not require `estimatedHours`, `timeSpent`, or AI-productivity fields to be present or greater than zero. Existing entered effort values are retained and remain available for historical reporting.
+- A parent task may be marked `Closed` only when every terminal descendant is in a complete terminal state (`Completed` or `Closed`). Parent rollups continue to derive status and progress from terminal descendants.
+- Task-grid and report status presentation must display `Closed` distinctly from `Completed`; it must not use language or icons that imply the task was successfully completed.
+
+## Terminal Status AI Validation
+
+Before a terminal task is saved as `Completed` or `Closed`, including through a task-row completion command, a task-editor action, Status selection, or setting progress to `100%`, the application validates AI productivity fields.
+
+- When `estimatedEffortWithoutAI` is present and greater than zero, `aiAssistancePercentage` must be greater than `0`.
+- A terminal task with an Estimated Effort Without AI value and AI Assistance of `0%`, blank, missing, or otherwise non-positive must be rejected with a clear validation message.
+- The user must either enter a positive AI Assistance percentage or clear the Estimated Effort Without AI value before completing or closing the task.
+- Existing validation remains in force: whenever AI Assistance is greater than `0%`, Estimated Effort Without AI is required and must be greater than Time Spent.
+- This validation applies to terminal work tasks. Parent terminal-status eligibility remains governed by descendant completion and calculated rollup behavior.
+
 ## AI Productivity Fields
 
 ### Estimated Hours
@@ -177,12 +200,38 @@ Backward compatibility: older JSON files may contain `estimatedHumanOnlyEffort` 
 `aiAssistancePercentage`
 
 - Whole-number percentage from 0 through 100
-- The estimated percentage of work that AI accelerated or meaningfully improved
+- The estimated percentage of recorded Time Spent that was performed with AI assistance
 - Record AI Assistance only when AI produced measurable productivity gains
 - Captured through a slider
 - Slider step is 5%
 - Defaults to 0%
 - Stored as a whole number
+
+### AI-Assisted Time Portion
+
+`aiAssistancePercentage` must be used to calculate the AI-assisted portion of a task's recorded Time Spent. This value is calculated at runtime and is not stored separately in JSON.
+
+```text
+AI-Assisted Time = Time Spent × (AI Assistance Percentage ÷ 100)
+```
+
+Example:
+
+```text
+Estimated Effort Without AI: 100 hours
+Time Spent: 10 hours
+AI Assistance Percentage: 90%
+
+AI-Assisted Time: 10 × 0.90 = 9 hours
+```
+
+The remaining portion of recorded time is the non-AI-assisted portion:
+
+```text
+Non-AI-Assisted Portion = Time Spent − AI-Assisted Time
+```
+
+For the example above, the non-AI-assisted portion is `1 hour`. This does not mean that a human was absent from the AI-assisted portion; the task remains human-directed work in which AI assisted with the stated percentage of the recorded effort. When Time Spent is greater than zero and AI Assistance is `0%`, all recorded Time Spent is human-only time. AI Assistance percentage is not a replacement for Time Spent and must not be interpreted as a percentage of Estimated Effort Without AI.
 
 ### Task Editor Layout
 
@@ -193,12 +242,15 @@ Below the Percentage of AI Assistance slider, the editor places Parent Task abov
 When a task is saved with AI Assistance greater than 0%:
 
 - `estimatedEffortWithoutAI` is required
-- `estimatedEffortWithoutAI` must be strictly greater than Time Spent (`timeSpent`); equality is invalid
+- `estimatedEffortWithoutAI` must be greater than zero
+- `estimatedEffortWithoutAI` may be less than, equal to, or greater than Time Spent (`timeSpent`)
 
-Validation message:
+An estimate below Time Spent produces a valid negative time-saved and AI-efficiency result. An estimate equal to Time Spent produces a valid zero time-saved and AI-efficiency result. The application must not reject either result or coerce negative calculated values to zero.
+
+Validation message when the estimate is missing or non-positive:
 
 ```text
-Estimated Effort Without AI must be greater than Time Spent whenever AI Assistance is greater than 0%.
+Estimated Effort Without AI must be greater than zero whenever AI Assistance is greater than 0%.
 
 AI Assistance represents measurable productivity gains.
 ```
@@ -236,6 +288,8 @@ AI Hours Saved =
 Estimated Effort Without AI - Time Spent
 ```
 
+AI Hours Saved is also called **Estimated Time Saved** in aggregate AI-efficiency metrics. It may be positive, zero, or negative; negative values indicate the task took longer with AI assistance than the estimated effort without AI.
+
 Example:
 
 ```text
@@ -254,7 +308,7 @@ The Robot column displays AI Hours Saved in decimal hours.
 - If some AI-tracking data exists but Estimated Effort Without AI is missing or zero, display blank.
 - If some AI-tracking data exists but Actual (Time Spent) is missing, display blank.
 - If Percentage of AI Assistance is zero, blank, missing, `null`, or otherwise not captured, treat it as `0%` and display `0.00 h` once the effort baseline is available.
-- If all required values are present, calculate and display AI Hours Saved.
+- If all required values are present, calculate and display AI Hours Saved, including negative values.
 - The value is displayed with two decimal places followed by `h`.
 
 ## Tooltip
@@ -292,6 +346,96 @@ Calculation:
 
 Represents the estimated productivity gained through meaningful AI assistance.
 ```
+
+---
+
+# AI Efficiency
+
+## Purpose and Source Fields
+
+AI Efficiency measures estimated time saved relative to actual work hours during which AI materially assisted the user. All task and aggregate calculations use only the authoritative source fields below; derived values are calculated at runtime, use full numeric precision, and are never stored as independent source-of-truth fields.
+
+- `timeSpent` — actual human work hours spent on the task.
+- `aiAssistancePercentage` — percentage from `0` through `100` of actual Time Spent during which AI materially assisted the user. Missing, blank, null, or invalid values normalize to `0` for backward compatibility.
+- `estimatedEffortWithoutAI` — estimated human work hours required to complete the same task without AI assistance.
+
+```text
+AI Usage Rate = AI Assistance Percentage ÷ 100
+AI-Assisted Hours = Time Spent × AI Usage Rate
+Estimated Time Saved = Estimated Effort Without AI − Time Spent
+Task AI Efficiency = (Estimated Time Saved ÷ AI-Assisted Hours) × 100
+```
+
+Task AI Efficiency represents estimated human-work hours saved per AI-assisted hour, expressed as a percentage. It must not be described as a completion percentage or as the task being a corresponding percentage faster. For example, Time Spent `4`, AI Assistance `50%`, and Estimated Effort Without AI `8` produces AI-Assisted Hours `2`, Estimated Time Saved `4`, and Task AI Efficiency `200%`.
+
+When AI Assistance is `0%`, AI-Assisted Hours and Task AI Efficiency are `0`; the task does not contribute to an aggregate AI-efficiency denominator. When Time Spent is `0` and AI Assistance is greater than `0%`, Task AI Efficiency is undefined and represented as `0` or null according to the application numeric model. The record is excluded from AI-efficiency aggregates and is identified as having insufficient time data. Division by zero must never produce `NaN` or `Infinity`.
+
+## Qualifying Task Rules and Scope
+
+A task qualifies for official AI-efficiency aggregate metrics only when all of the following are true:
+
+- Time Spent is finite and greater than `0`.
+- AI Assistance is finite, greater than `0`, and no greater than `100`.
+- Estimated Effort Without AI is finite and greater than `0`.
+- The task is terminal with final actual-time values: Status is `Completed` or `Closed`.
+
+In-progress tasks may display provisional task-level results, but they are excluded from official completed-task aggregate metrics unless the aggregate is explicitly labeled provisional. Aggregate metrics must respect their active reporting scope, such as the current filtered task set, selected project, or selected date range. Every numerator and denominator in an individual aggregate must be calculated from the same qualifying task set.
+
+## Weighted Aggregate Calculation
+
+The official **Average AI Efficiency** is a weighted aggregate based on AI-assisted hours. It must be calculated from totals and must never be a simple arithmetic average of task-level AI-efficiency percentages.
+
+```text
+Total AI-Assisted Hours = Σ(Time Spent × AI Usage Rate)
+Total Estimated Time Saved = Σ(Estimated Effort Without AI − Time Spent)
+Average AI Efficiency = (Total Estimated Time Saved ÷ Total AI-Assisted Hours) × 100
+```
+
+The prohibited calculation is:
+
+```text
+Σ(Task AI Efficiency) ÷ Number of Tasks
+```
+
+If Total AI-Assisted Hours is `0`, Average AI Efficiency is `0` and the UI displays `No qualifying AI-assisted work has been recorded.` Negative time-saved and negative efficiency values are valid and must be displayed with neutral wording, such as `AI-assisted work exceeded the estimated human-only effort for the selected tasks.`
+
+## Supporting Aggregate Metrics
+
+For the same qualifying AI-assisted completed-task set used by Average AI Efficiency, calculate:
+
+```text
+Overall Time Reduction = (Total Estimated Time Saved ÷ Total Estimated Effort Without AI) × 100
+Productivity Multiplier = Total Estimated Effort Without AI ÷ Total Time Spent
+AI Utilization = (Total AI-Assisted Hours ÷ Total Time Spent) × 100
+```
+
+The application may provide a general productivity multiplier or AI utilization for all completed tasks with valid actual-time data, including tasks with `0%` AI assistance, only when the UI label and tooltip explicitly identify that broader scope. No intermediate derived value is rounded; display hours to two decimal places, percentages to one or two decimal places, and productivity multipliers to two decimal places.
+
+## Statistics Section and AI Analysis UI
+
+The top statistics section contains `Total Tasks`, `Active`, `Overdue`, `Overall Progress`, and an `AI Efficiency` box immediately after `Overall Progress`.
+
+- The `AI Efficiency` box displays Average AI Efficiency for qualifying completed or Closed tasks in the active non-archived reporting scope.
+- The box tooltip states: `Weighted average AI efficiency based on AI-assisted hours. Estimated human hours saved per AI-assisted hour.`
+- When no task qualifies, the box displays `0%` and exposes the no-qualifying-work empty-state explanation.
+
+The AI Analysis section displays Average AI Efficiency, Total Estimated Time Saved, Total AI-Assisted Hours, Overall Time Reduction, Productivity Multiplier, AI Utilization, and Qualifying Task Count. Tooltips define: Total Estimated Time Saved as the difference between Estimated Effort Without AI and Time Spent; Overall Time Reduction as the estimated percentage reduction in human labor time; Productivity Multiplier as Estimated Effort Without AI divided by Time Spent; and AI Utilization as the weighted portion of actual work time associated with AI assistance.
+
+## Reference Aggregate Example
+
+| Task | Time Spent | AI Assistance | Estimated Effort Without AI | AI-Assisted Hours | Estimated Time Saved |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| A | 4 | 50% | 8 | 2 | 4 |
+| B | 10 | 20% | 12 | 2 | 2 |
+| C | 2 | 100% | 7 | 2 | 5 |
+
+```text
+Total AI-Assisted Hours = 6
+Total Estimated Time Saved = 11
+Average AI Efficiency = (11 ÷ 6) × 100 = 183.33%
+```
+
+This result is intentionally not the arithmetic mean of the three task-level percentages.
 
 ---
 
@@ -474,6 +618,19 @@ Supports:
 - Overdue view
 - Due-date filter
 - Archive view
+- Recently Created view
+
+## Recently Created View
+
+The left navigation includes a `Recently Created` view that shows tasks created during the trailing 24-hour period.
+
+- A task qualifies when its `createdAt` timestamp is greater than or equal to the current local date/time minus 24 hours.
+- The comparison is rolling rather than calendar-day based; it is evaluated when the task grid is rendered or refreshed.
+- Tasks are ordered newest first by `createdAt`; tasks with missing or invalid `createdAt` values do not qualify.
+- The view respects the current search, project, status, due-date, and Hide Completed filters.
+- Normal archive boundaries remain in force: non-archived tasks participate in the normal `Recently Created` view, while archived tasks participate only when the Archive view is selected.
+- Parent-context rendering continues to apply: a visible recently created child includes its eligible parent hierarchy context in the main task grid without causing a parent to count as a Recently Created match.
+- The view label includes a tooltip or accessible description stating that it shows tasks created in the last 24 hours.
 
 ## Parent Context in Main Results
 
@@ -487,6 +644,7 @@ Available options:
 - Past Due
 - Due Last Week
 - Due Today
+- Due Yesterday
 - Due Tomorrow
 - Due This Week
 - Due Next Week
@@ -499,6 +657,10 @@ A week runs from Sunday through Saturday.
 ### Due This Week
 
 Shows tasks with a due date from today through the final day of the current week.
+
+### Due Yesterday
+
+Shows tasks whose due date is exactly the preceding local calendar day. This option is distinct from `Past Due`: `Due Yesterday` excludes tasks due before yesterday and applies regardless of whether the task is complete, subject to any other active filters.
 
 ### Due Next Week
 
@@ -1176,3 +1338,42 @@ This permits time spent on blocked, deferred, canceled, or otherwise interrupted
 - `Export Report` uses the currently visible task-grid data and hierarchy-preserving order to generate a downloadable standalone HTML report.
 - `Export Report` binds current-view data into the supplied standalone report HTML template by replacing the template's `embeddedData` JSON payload.
 - The default report filename is `MyTaskAssistant-[The name of the project on the top of the list]-datetimestamp.html`.
+
+## v4.6.1 Closed Status Specification
+
+- Added the `Closed` terminal status specification.
+- `Closed` closes a task at 100% while allowing Estimated Hours, Time Spent, and AI-productivity fields to be zero or absent.
+- It participates in completion-equivalent workflow behavior while remaining visibly distinct from successfully completed work.
+
+## v4.6.2 Recently Created View Specification
+
+- Added the left-navigation `Recently Created` view for tasks created during the trailing 24 hours.
+- The view is rolling, orders qualifying tasks newest first, honors active main-grid filters, and retains the existing archive and parent-context rules.
+
+## v4.6.3 Terminal Status AI Validation Specification
+
+- Completing or closing a terminal task now validates that a positive Estimated Effort Without AI value is accompanied by AI Assistance greater than `0%`.
+- A user must provide a positive AI Assistance percentage or clear the Estimated Effort Without AI value before the terminal status can be saved.
+
+## v4.6.4 Due Yesterday Filter Specification
+
+- Added `Due Yesterday` to the Due Date dropdown filter.
+- The filter returns tasks due exactly on the preceding local calendar day and is intentionally distinct from `Past Due`, which includes all incomplete tasks due before today.
+
+## v4.6.5 AI-Assisted Time Portion Specification
+
+- AI Assistance percentage is used to calculate the AI-assisted portion of recorded Time Spent: `timeSpent × (aiAssistancePercentage ÷ 100)`.
+- For example, 10 hours of Time Spent with 90% AI Assistance contains 9 AI-assisted hours and a 1-hour non-AI-assisted portion, regardless of the Estimated Effort Without AI value. This remains human-directed partnership work throughout.
+- When Time Spent is greater than zero and AI Assistance is `0%`, the full recorded Time Spent is human-only time.
+
+## v4.6.6 Closed Status Terminology
+
+- Replaced the `Won't Do` terminal-status concept with `Closed`.
+- `Closed` retains the same terminal, completion-equivalent, validation, rollup, filtering, dependency, and zero-effort rules while supporting a broader range of non-completion closure reasons.
+
+## v4.6.7 Weighted AI Efficiency and Statistics
+
+- Added the `AI Efficiency` statistics box immediately after `Overall Progress`.
+- Replaced any arithmetic averaging of task-level AI-efficiency percentages with the weighted calculation `Total Estimated Time Saved ÷ Total AI-Assisted Hours`.
+- Added qualifying-task rules, zero and negative efficiency handling, supporting aggregate metrics, UI tooltips, precision rules, and the AI Analysis metric set.
+- Replaced the invalid requirement that Estimated Effort Without AI exceed Time Spent; a positive estimate may now produce positive, zero, or negative time saved.
