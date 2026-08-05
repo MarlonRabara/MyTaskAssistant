@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>MyTaskAssistant v4.6.7 – User Guide</title>
+  <title>MyTaskAssistant v4.6.8 – User Guide</title>
   <style>
     :root {
       --bg: #eef2f7;
@@ -403,7 +403,7 @@
             monitoring AI-assisted productivity, and producing weekly HTML reports.
           </p>
         </div>
-        <div class="version">v4.6.7</div>
+        <div class="version">v4.6.8</div>
       </div>
 
       <div class="hero-grid">
@@ -619,7 +619,7 @@
               Completed tasks require Estimated Hours and Time Spent greater than zero. Closed tasks may have zero effort. Before either terminal status is saved, a positive Estimated Effort Without AI value requires an AI Assistance percentage greater than 0%; AI Assistance greater than 0% requires a positive Estimated Effort Without AI value but that estimate may be lower than, equal to, or greater than Time Spent. A parent task cannot enter a terminal status until all child and nested-child tasks are terminal. These rules apply to the checkbox, task-editor actions, and saving a terminal status or 100% progress.
           </p>
            <p>
-               Status and progress stay synchronized: setting progress to <b>100%</b> automatically sets Status to <b>Completed</b>; setting Status to <b>Completed</b> or <b>Closed</b> automatically sets progress to <b>100%</b>. Saving does not permit a mismatched terminal state.
+                Status and progress stay synchronized: setting progress to <b>100%</b> defaults Status to <b>Completed</b> only when Closed was not explicitly selected; setting Status to <b>Completed</b> or <b>Closed</b> automatically sets progress to <b>100%</b>. Completion-date and progress synchronization preserve an explicitly selected <b>Closed</b> status.
            </p>
             <p>
                 The editable <b>Completed date</b> records when work finished or was Closed. A missing date is set to today when a task enters either terminal status, while changing to any non-terminal status clears it and reduces 100% progress to 99% so the task is no longer complete. You can then adjust progress as needed. Entering a completion date that is today or earlier automatically sets Status to Completed and progress to 100%.
@@ -978,7 +978,7 @@
     </div>
 
     <footer class="footer">
-      MyTaskAssistant v4.6.7 · Standalone local-first application guide · Generated for distribution with the application package
+      MyTaskAssistant v4.6.8 · Standalone local-first application guide · Generated for distribution with the application package
     </footer>
   </div>
 </body>

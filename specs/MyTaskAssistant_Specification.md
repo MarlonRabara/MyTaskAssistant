@@ -1,5 +1,5 @@
 # MyTaskAssistant Specification
-**Application Version:** v4.6.7
+**Application Version:** v4.6.8
 **Last Updated:** 2026-08-01
 
 ## Overview
@@ -145,7 +145,10 @@ A parent task cannot be marked `Completed` until every terminal descendant task 
 - `Closed` is available anywhere a task status can be selected.
 - Setting Status to `Closed` sets `percentComplete` to `100` and assigns `completedDate` to the current local date when it is blank, using the same synchronization behavior as `Completed`.
 - A task whose status is `Closed` is treated as complete for completion checks, parent rollups, parent completion eligibility, active/completed filtering, overdue calculations, export/report inclusion, and dependency-satisfaction logic.
-- A task with `percentComplete` at `100` is still synchronized to Status `Completed`; users must explicitly select `Closed` when that distinction is intended.
+- `Completed` and `Closed` are separate terminal statuses. A task at `100%` progress may have either status.
+- Selecting `Closed` is authoritative: after the user selects and saves `Closed`, the application must preserve `status: "Closed"` and `percentComplete: 100`. It must not silently rewrite the status to `Completed` during change handling, completion-date synchronization, validation, rendering, normalization, saving, loading, filtering, reporting, or parent-rollup calculation.
+- Setting progress to `100%` without an explicit terminal-status choice may set Status to `Completed` as the default. This default applies only when the task is not already `Closed`; it must never overwrite an existing or explicitly selected `Closed` status.
+- Entering or changing `completedDate` may default a non-terminal task to `Completed`, but it must preserve `Closed` when the task is already Closed or Closed is selected in the editor.
 - Moving a `Closed` task to any non-terminal status clears `completedDate` and reduces `percentComplete` from `100` to `99`, matching the existing behavior for moving a completed task back to active work.
 - Unlike `Completed`, `Closed` does not require `estimatedHours`, `timeSpent`, or AI-productivity fields to be present or greater than zero. Existing entered effort values are retained and remain available for historical reporting.
 - A parent task may be marked `Closed` only when every terminal descendant is in a complete terminal state (`Completed` or `Closed`). Parent rollups continue to derive status and progress from terminal descendants.
@@ -158,7 +161,7 @@ Before a terminal task is saved as `Completed` or `Closed`, including through a 
 - When `estimatedEffortWithoutAI` is present and greater than zero, `aiAssistancePercentage` must be greater than `0`.
 - A terminal task with an Estimated Effort Without AI value and AI Assistance of `0%`, blank, missing, or otherwise non-positive must be rejected with a clear validation message.
 - The user must either enter a positive AI Assistance percentage or clear the Estimated Effort Without AI value before completing or closing the task.
-- Existing validation remains in force: whenever AI Assistance is greater than `0%`, Estimated Effort Without AI is required and must be greater than Time Spent.
+- Existing validation remains in force: whenever AI Assistance is greater than `0%`, Estimated Effort Without AI is required and must be greater than zero.
 - This validation applies to terminal work tasks. Parent terminal-status eligibility remains governed by descendant completion and calculated rollup behavior.
 
 ## AI Productivity Fields
@@ -1377,3 +1380,9 @@ This permits time spent on blocked, deferred, canceled, or otherwise interrupted
 - Replaced any arithmetic averaging of task-level AI-efficiency percentages with the weighted calculation `Total Estimated Time Saved ÷ Total AI-Assisted Hours`.
 - Added qualifying-task rules, zero and negative efficiency handling, supporting aggregate metrics, UI tooltips, precision rules, and the AI Analysis metric set.
 - Replaced the invalid requirement that Estimated Effort Without AI exceed Time Spent; a positive estimate may now produce positive, zero, or negative time saved.
+
+## v4.6.8 Closed Status Preservation
+
+- Clarified that `Closed` and `Completed` are separate terminal statuses even though both use `100%` progress.
+- Saving, loading, synchronization, normalization, rendering, filtering, reporting, and parent-rollup logic must preserve an explicitly selected or stored `Closed` status and must not revert it to `Completed`.
+- `Completed` remains only the default terminal status when 100% progress or a completion date is entered without an explicit `Closed` selection.

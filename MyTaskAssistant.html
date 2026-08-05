@@ -1519,7 +1519,7 @@
   <path d="M36 32.5v7M32.5 36h7" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/>
 </svg></div>
         <div>
-          <h1>MyTaskAssistant <span class="version-badge">v4.6.7</span></h1>
+          <h1>MyTaskAssistant <span class="version-badge">v4.6.8</span></h1>
           <p>Personal task manager designed by Marlon Rabara</p>
         </div>
       </div>
@@ -1902,7 +1902,7 @@
     let selectedDependencyIds = [];
     let saved = true;
 
-    const APPLICATION_VERSION = "v4.6.7";
+    const APPLICATION_VERSION = "v4.6.8";
 
     const $ = (id) => document.getElementById(id);
 
@@ -2465,7 +2465,7 @@ Calculated AI Assistance: ${percentage}%`;
       const statusInput = $("taskStatusInput");
       const progressInput = $("taskProgressInput");
 
-      if (source === "completedDate" && completedDateInput.value && completedDateInput.value <= today) {
+      if (source === "completedDate" && completedDateInput.value && completedDateInput.value <= today && statusInput.value !== "Closed") {
         statusInput.value = "Completed";
         progressInput.value = 100;
       }
@@ -2474,7 +2474,7 @@ Calculated AI Assistance: ${percentage}%`;
       }
       if (source === "progress" && Number(progressInput.value || 0) >= 100) {
         progressInput.value = 100;
-        statusInput.value = "Completed";
+        if (statusInput.value !== "Closed") statusInput.value = "Completed";
       }
       if (statusInput.value !== "Completed" && statusInput.value !== "Closed") {
         if (Number(progressInput.value || 0) >= 100) {
