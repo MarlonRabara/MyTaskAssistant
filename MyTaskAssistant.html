@@ -1519,7 +1519,7 @@
   <path d="M36 32.5v7M32.5 36h7" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/>
 </svg></div>
         <div>
-          <h1>MyTaskAssistant <span class="version-badge">v4.7.0</span></h1>
+          <h1>MyTaskAssistant <span class="version-badge">v4.7.2</span></h1>
           <p>Personal task manager designed by Marlon Rabara</p>
         </div>
       </div>
@@ -1580,7 +1580,7 @@
           <div class="metric-value" id="metricProgress">0%</div>
           <div class="metric-detail">Average completion</div>
         </article>
-        <article class="metric" title="Weighted average AI efficiency based on AI-assisted hours from qualifying Completed and Closed tasks, including archived tasks. Estimated human hours saved per AI-assisted hour.">
+        <article class="metric" id="metricAiEfficiencyCard" title="Estimated time saved due to AI involvement, divided by total estimated effort without AI for qualifying Completed and Closed tasks, including archived tasks.">
           <div class="metric-label">AI Efficiency</div>
           <div class="metric-value" id="metricAiEfficiency">0%</div>
           <div class="metric-detail" id="metricAiEfficiencyDetail">No qualifying terminal items</div>
@@ -1911,7 +1911,7 @@
     let selectedDependencyIds = [];
     let saved = true;
 
-    const APPLICATION_VERSION = "v4.7.0";
+    const APPLICATION_VERSION = "v4.7.2";
 
     const $ = (id) => document.getElementById(id);
 
@@ -2337,11 +2337,13 @@
         metrics.totalEstimatedTimeSaved += estimatedEffortWithoutAI - timeSpent;
       });
 
-      if (metrics.totalAiAssistedHours > 0) {
-        metrics.averageAiEfficiency = (metrics.totalEstimatedTimeSaved / metrics.totalAiAssistedHours) * 100;
-        metrics.overallTimeReduction = (metrics.totalEstimatedTimeSaved / metrics.totalEstimatedEffortWithoutAI) * 100;
+      if (metrics.totalEstimatedEffortWithoutAI > 0) {
+        metrics.averageAiEfficiency = (metrics.totalEstimatedTimeSaved / metrics.totalEstimatedEffortWithoutAI) * 100;
+        metrics.overallTimeReduction = metrics.averageAiEfficiency;
         metrics.productivityMultiplier = metrics.totalEstimatedEffortWithoutAI / metrics.totalTimeSpent;
-        metrics.aiUtilization = (metrics.totalAiAssistedHours / metrics.totalTimeSpent) * 100;
+        metrics.aiUtilization = metrics.totalTimeSpent > 0
+          ? (metrics.totalAiAssistedHours / metrics.totalTimeSpent) * 100
+          : 0;
       }
       return metrics;
     }
@@ -2664,6 +2666,9 @@ Calculated AI Assistance: ${percentage}%`;
       $("metricAiEfficiencyDetail").textContent = aiMetrics.qualifyingTaskCount
         ? `${aiMetrics.qualifyingTaskCount} qualifying terminal item${aiMetrics.qualifyingTaskCount === 1 ? "" : "s"}`
         : "No qualifying terminal items";
+      $("metricAiEfficiencyCard").title = aiMetrics.qualifyingTaskCount
+        ? `AI Efficiency = Total Estimated Time Saved ÷ Total Estimated Effort Without AI.\n\nOverall Productivity Multiplier: ${aiMetrics.productivityMultiplier.toFixed(2)}×\n\nProductivity Multiplier = Total Estimated Effort Without AI ÷ Total Time Spent.`
+        : "No qualifying terminal items with AI-assisted work have been recorded.\n\nOverall Productivity Multiplier: 0.00×";
 
       $("navAll").textContent = total;
       $("navActive").textContent = active;
@@ -3679,19 +3684,19 @@ Calculated AI Assistance: ${percentage}%`;
       }
       const metrics = model.metrics;
       $("aiAnalysisSummary").innerHTML = `
-        <span class="timesheet-summary-badge" title="Weighted average AI efficiency based on AI-assisted hours.">AI Efficiency: <strong>${metrics.averageAiEfficiency.toFixed(2)}%</strong></span>
+        <span class="timesheet-summary-badge" title="Estimated time saved due to AI involvement divided by total estimated effort without AI.">AI Efficiency: <strong>${metrics.averageAiEfficiency.toFixed(2)}%</strong></span>
         <span class="timesheet-summary-badge">Estimated Time Saved: <strong>${metrics.totalEstimatedTimeSaved.toFixed(2)} h</strong></span>
+        <span class="timesheet-summary-badge">Estimated Effort Without AI: <strong>${metrics.totalEstimatedEffortWithoutAI.toFixed(2)} h</strong></span>
         <span class="timesheet-summary-badge">AI-Assisted Hours: <strong>${metrics.totalAiAssistedHours.toFixed(2)} h</strong></span>
-        <span class="timesheet-summary-badge">Time Reduction: <strong>${metrics.overallTimeReduction.toFixed(2)}%</strong></span>
-        <span class="timesheet-summary-badge">Productivity: <strong>${metrics.productivityMultiplier.toFixed(2)}×</strong></span>
+        <span class="timesheet-summary-badge">Productivity Multiplier: <strong>${metrics.productivityMultiplier.toFixed(2)}×</strong></span>
         <span class="timesheet-summary-badge">AI Utilization: <strong>${metrics.aiUtilization.toFixed(2)}%</strong></span>
         <span class="timesheet-summary-badge">Qualifying Tasks: <strong>${metrics.qualifyingTaskCount}</strong></span>`;
       $("aiAnalysisPreview").innerHTML = `
         <h3>AI Analysis</h3>
         <p>${escapeHtml(formatTimesheetDate(model.weekStart))} – ${escapeHtml(formatTimesheetDate(model.weekEnd))}</p>
-        <table><thead><tr><th>Project</th><th>Task</th><th>Time Spent</th><th>AI %</th><th>AI-Assisted Hours</th><th>Without AI</th><th>Estimated Time Saved</th><th>AI Efficiency</th></tr></thead>
-        <tbody>${model.rows.map(r=>`<tr><td>${escapeHtml(r.project)}</td><td>${escapeHtml(r.task)}</td><td>${r.timeSpent.toFixed(2)}</td><td>${r.aiAssistance.toFixed(0)}%</td><td>${r.aiHours.toFixed(2)}</td><td>${r.withoutAI.toFixed(2)}</td><td>${r.saved.toFixed(2)}</td><td>${((r.saved / r.aiHours) * 100).toFixed(2)}%</td></tr>`).join("")}</tbody>
-        <tfoot><tr><th colspan="4">Weighted totals</th><th>${metrics.totalAiAssistedHours.toFixed(2)}</th><th>${metrics.totalEstimatedEffortWithoutAI.toFixed(2)}</th><th>${metrics.totalEstimatedTimeSaved.toFixed(2)}</th><th>${metrics.averageAiEfficiency.toFixed(2)}%</th></tr></tfoot></table>`;
+        <table><thead><tr><th>Project</th><th>Task</th><th>Time Spent</th><th>AI %</th><th>AI-Assisted Hours</th><th>Without AI</th><th>Estimated Time Saved</th><th>AI Efficiency</th><th>Productivity Multiplier</th></tr></thead>
+        <tbody>${model.rows.map(r=>`<tr><td>${escapeHtml(r.project)}</td><td>${escapeHtml(r.task)}</td><td>${r.timeSpent.toFixed(2)}</td><td>${r.aiAssistance.toFixed(0)}%</td><td>${r.aiHours.toFixed(2)}</td><td>${r.withoutAI.toFixed(2)}</td><td>${r.saved.toFixed(2)}</td><td>${((r.saved / r.withoutAI) * 100).toFixed(2)}%</td><td>${(r.withoutAI / r.timeSpent).toFixed(2)}×</td></tr>`).join("")}</tbody>
+        <tfoot><tr><th colspan="4">Aggregate totals</th><th>${metrics.totalAiAssistedHours.toFixed(2)}</th><th>${metrics.totalEstimatedEffortWithoutAI.toFixed(2)}</th><th>${metrics.totalEstimatedTimeSaved.toFixed(2)}</th><th>${metrics.averageAiEfficiency.toFixed(2)}%</th><th>${metrics.productivityMultiplier.toFixed(2)}×</th></tr></tfoot></table>`;
       $("downloadAiAnalysisHtmlBtn").disabled = false;
     }
 
@@ -3709,7 +3714,7 @@ Calculated AI Assistance: ${percentage}%`;
 
     function standaloneAiAnalysisHtml(model) {
       const m = model.metrics;
-      return `<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><title>AI Analysis ${isoDateLocal(model.weekStart)}</title><style>body{font-family:Segoe UI,Arial,sans-serif;margin:32px;color:#172033}table{border-collapse:collapse;width:100%}th,td{border:1px solid #ccd3dd;padding:8px;text-align:left}th{background:#eef2f7}.summary{display:flex;gap:12px;flex-wrap:wrap;margin:16px 0}.summary span{border:1px solid #ccd3dd;border-radius:8px;padding:8px 12px}</style></head><body><h1>AI Analysis</h1><p>${formatTimesheetDate(model.weekStart)} – ${formatTimesheetDate(model.weekEnd)}</p><div class="summary"><span>Average AI Efficiency: <strong>${m.averageAiEfficiency.toFixed(2)}%</strong></span><span>Estimated Time Saved: <strong>${m.totalEstimatedTimeSaved.toFixed(2)} h</strong></span><span>AI-Assisted Hours: <strong>${m.totalAiAssistedHours.toFixed(2)} h</strong></span><span>Overall Time Reduction: <strong>${m.overallTimeReduction.toFixed(2)}%</strong></span><span>Productivity Multiplier: <strong>${m.productivityMultiplier.toFixed(2)}×</strong></span><span>AI Utilization: <strong>${m.aiUtilization.toFixed(2)}%</strong></span><span>Qualifying Tasks: <strong>${m.qualifyingTaskCount}</strong></span></div><table><thead><tr><th>Project</th><th>Task</th><th>Time Spent</th><th>AI %</th><th>AI-Assisted Hours</th><th>Without AI</th><th>Estimated Time Saved</th><th>AI Efficiency</th></tr></thead><tbody>${model.rows.map(r=>`<tr><td>${escapeHtml(r.project)}</td><td>${escapeHtml(r.task)}</td><td>${r.timeSpent.toFixed(2)}</td><td>${r.aiAssistance.toFixed(0)}%</td><td>${r.aiHours.toFixed(2)}</td><td>${r.withoutAI.toFixed(2)}</td><td>${r.saved.toFixed(2)}</td><td>${((r.saved/r.aiHours)*100).toFixed(2)}%</td></tr>`).join("")}</tbody><tfoot><tr><th colspan="4">Weighted totals</th><th>${m.totalAiAssistedHours.toFixed(2)}</th><th>${m.totalEstimatedEffortWithoutAI.toFixed(2)}</th><th>${m.totalEstimatedTimeSaved.toFixed(2)}</th><th>${m.averageAiEfficiency.toFixed(2)}%</th></tr></tfoot></table></body></html>`;
+      return `<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><title>AI Analysis ${isoDateLocal(model.weekStart)}</title><style>body{font-family:Segoe UI,Arial,sans-serif;margin:32px;color:#172033}table{border-collapse:collapse;width:100%}th,td{border:1px solid #ccd3dd;padding:8px;text-align:left}th{background:#eef2f7}.summary{display:flex;gap:12px;flex-wrap:wrap;margin:16px 0}.summary span{border:1px solid #ccd3dd;border-radius:8px;padding:8px 12px}</style></head><body><h1>AI Analysis</h1><p>${formatTimesheetDate(model.weekStart)} – ${formatTimesheetDate(model.weekEnd)}</p><div class="summary"><span title="Estimated time saved due to AI involvement divided by total estimated effort without AI.">AI Efficiency: <strong>${m.averageAiEfficiency.toFixed(2)}%</strong></span><span>Estimated Time Saved: <strong>${m.totalEstimatedTimeSaved.toFixed(2)} h</strong></span><span>Estimated Effort Without AI: <strong>${m.totalEstimatedEffortWithoutAI.toFixed(2)} h</strong></span><span>AI-Assisted Hours: <strong>${m.totalAiAssistedHours.toFixed(2)} h</strong></span><span>Productivity Multiplier: <strong>${m.productivityMultiplier.toFixed(2)}×</strong></span><span>AI Utilization: <strong>${m.aiUtilization.toFixed(2)}%</strong></span><span>Qualifying Tasks: <strong>${m.qualifyingTaskCount}</strong></span></div><table><thead><tr><th>Project</th><th>Task</th><th>Time Spent</th><th>AI %</th><th>AI-Assisted Hours</th><th>Without AI</th><th>Estimated Time Saved</th><th>AI Efficiency</th><th>Productivity Multiplier</th></tr></thead><tbody>${model.rows.map(r=>`<tr><td>${escapeHtml(r.project)}</td><td>${escapeHtml(r.task)}</td><td>${r.timeSpent.toFixed(2)}</td><td>${r.aiAssistance.toFixed(0)}%</td><td>${r.aiHours.toFixed(2)}</td><td>${r.withoutAI.toFixed(2)}</td><td>${r.saved.toFixed(2)}</td><td>${((r.saved/r.withoutAI)*100).toFixed(2)}%</td><td>${(r.withoutAI/r.timeSpent).toFixed(2)}×</td></tr>`).join("")}</tbody><tfoot><tr><th colspan="4">Aggregate totals</th><th>${m.totalAiAssistedHours.toFixed(2)}</th><th>${m.totalEstimatedEffortWithoutAI.toFixed(2)}</th><th>${m.totalEstimatedTimeSaved.toFixed(2)}</th><th>${m.averageAiEfficiency.toFixed(2)}%</th><th>${m.productivityMultiplier.toFixed(2)}×</th></tr></tfoot></table></body></html>`;
     }
 
     function downloadAiAnalysisHtml() {

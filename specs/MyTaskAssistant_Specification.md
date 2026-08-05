@@ -1,5 +1,5 @@
 # MyTaskAssistant Specification
-**Application Version:** v4.7.0
+**Application Version:** v4.7.2
 **Last Updated:** 2026-08-01
 
 ## Overview
@@ -386,46 +386,53 @@ A **terminal item** is any task whose status is `Completed` or `Closed`, regardl
 
 In-progress tasks may display provisional task-level results, but they are excluded from official completed-task aggregate metrics unless the aggregate is explicitly labeled provisional. Aggregate metrics must respect their active reporting scope, such as the current filtered task set, selected project, or selected date range. Every numerator and denominator in an individual aggregate must be calculated from the same qualifying task set.
 
-## Weighted Aggregate Calculation
+## Aggregate AI Efficiency Calculation
 
-The official **Average AI Efficiency** is a weighted aggregate based on AI-assisted hours. It must be calculated from totals and must never be a simple arithmetic average of task-level AI-efficiency percentages.
+The official **AI Efficiency** is the estimated percentage reduction in total effort attributable to AI involvement. It is calculated from totals and must never be a simple arithmetic average of task-level percentages.
 
 ```text
 Total AI-Assisted Hours = Σ(Time Spent × AI Usage Rate)
 Total Estimated Time Saved = Σ(Estimated Effort Without AI − Time Spent)
-Average AI Efficiency = (Total Estimated Time Saved ÷ Total AI-Assisted Hours) × 100
+Total Estimated Effort Without AI = Σ(Estimated Effort Without AI)
+AI Efficiency = (Total Estimated Time Saved ÷ Total Estimated Effort Without AI) × 100
 ```
 
-The prohibited calculation is:
+AI Efficiency measures the portion of estimated no-AI effort that was saved through AI involvement. It is distinct from AI utilization and must not use Total AI-Assisted Hours as its denominator.
+
+The following calculations are prohibited for aggregate AI Efficiency:
 
 ```text
 Σ(Task AI Efficiency) ÷ Number of Tasks
+
+Total Estimated Time Saved ÷ Total AI-Assisted Hours
 ```
 
-If Total AI-Assisted Hours is `0`, Average AI Efficiency is `0` and the UI displays `No qualifying AI-assisted work has been recorded.` Negative time-saved and negative efficiency values are valid and must be displayed with neutral wording, such as `AI-assisted work exceeded the estimated human-only effort for the selected tasks.`
+If Total Estimated Effort Without AI is `0`, AI Efficiency is `0` and the UI displays `No qualifying AI-assisted work has been recorded.` Negative time-saved and negative efficiency values are valid and must be displayed with neutral wording, such as `AI-assisted work exceeded the estimated effort without AI for the selected tasks.`
 
 ## Supporting Aggregate Metrics
 
-For the same qualifying AI-assisted completed-task set used by Average AI Efficiency, calculate:
+For the same qualifying AI-assisted terminal-item set used by AI Efficiency, calculate:
 
 ```text
-Overall Time Reduction = (Total Estimated Time Saved ÷ Total Estimated Effort Without AI) × 100
 Productivity Multiplier = Total Estimated Effort Without AI ÷ Total Time Spent
 AI Utilization = (Total AI-Assisted Hours ÷ Total Time Spent) × 100
 ```
 
-The application may provide a general productivity multiplier or AI utilization for all completed tasks with valid actual-time data, including tasks with `0%` AI assistance, only when the UI label and tooltip explicitly identify that broader scope. No intermediate derived value is rounded; display hours to two decimal places, percentages to one or two decimal places, and productivity multipliers to two decimal places.
+`Productivity Multiplier` is a separate analysis of potential no-AI effort compared with actual effort. For example, `1.50×` means the selected completed or Closed work was estimated to require 1.5 times as many hours without AI as it actually required.
+
+The application may provide a general productivity multiplier or AI utilization for all terminal items with valid actual-time data, including tasks with `0%` AI assistance, only when the UI label and tooltip explicitly identify that broader scope. No intermediate derived value is rounded; display hours to two decimal places, percentages to one or two decimal places, and productivity multipliers to two decimal places.
 
 ## Statistics Section and AI Analysis UI
 
 The top statistics section contains `Total Tasks`, `Active`, `Overdue`, `Overall Progress`, and an `AI Efficiency` box immediately after `Overall Progress`.
 
-- The main-view `AI Efficiency` box displays Average AI Efficiency for qualifying terminal items across the full task dataset, including archived tasks. Its qualifying-task count and supporting label must use that same full-dataset scope.
+- The main-view `AI Efficiency` box displays AI Efficiency for qualifying terminal items across the full task dataset, including archived tasks. Its qualifying-task count and supporting label must use that same full-dataset scope.
 - The box may label the count as `qualifying terminal items`; this count includes only terminal items that also satisfy the AI-efficiency source-value rules. A separate terminal-item count, when displayed, includes every Completed or Closed task regardless of archive state or AI data completeness.
-- The box tooltip states: `Weighted average AI efficiency based on AI-assisted hours. Estimated human hours saved per AI-assisted hour.`
+- Hovering or focusing the main-view `AI Efficiency` box displays the overall Productivity Multiplier for the same qualifying terminal-item scope. The tooltip identifies the formula `Total Estimated Effort Without AI ÷ Total Time Spent` and formats the result as a multiplier, such as `1.50×`.
+- The box tooltip also states: `Estimated time saved due to AI involvement, divided by the total estimated effort without AI.`
 - When no task qualifies, the box displays `0%` and exposes the no-qualifying-work empty-state explanation.
 
-The AI Analysis section displays Average AI Efficiency, Total Estimated Time Saved, Total AI-Assisted Hours, Overall Time Reduction, Productivity Multiplier, AI Utilization, and Qualifying Task Count. Tooltips define: Total Estimated Time Saved as the difference between Estimated Effort Without AI and Time Spent; Overall Time Reduction as the estimated percentage reduction in human labor time; Productivity Multiplier as Estimated Effort Without AI divided by Time Spent; and AI Utilization as the weighted portion of actual work time associated with AI assistance.
+The AI Analysis section displays AI Efficiency, Total Estimated Time Saved, Total Estimated Effort Without AI, Total AI-Assisted Hours, Productivity Multiplier, AI Utilization, and Qualifying Task Count. Tooltips define: Total Estimated Time Saved as the difference between Estimated Effort Without AI and Time Spent; AI Efficiency as Total Estimated Time Saved divided by Total Estimated Effort Without AI; Productivity Multiplier as Estimated Effort Without AI divided by Time Spent; and AI Utilization as the weighted portion of actual work time associated with AI assistance. The downloaded AI Analysis HTML export includes a `Productivity Multiplier` column for each task, calculated as that task's Estimated Effort Without AI divided by its Time Spent.
 
 ## Reference Aggregate Example
 
@@ -438,10 +445,12 @@ The AI Analysis section displays Average AI Efficiency, Total Estimated Time Sav
 ```text
 Total AI-Assisted Hours = 6
 Total Estimated Time Saved = 11
-Average AI Efficiency = (11 ÷ 6) × 100 = 183.33%
+Total Estimated Effort Without AI = 27
+AI Efficiency = (11 ÷ 27) × 100 = 40.74%
+Productivity Multiplier = 27 ÷ 16 = 1.69×
 ```
 
-This result is intentionally not the arithmetic mean of the three task-level percentages.
+This result is intentionally not the arithmetic mean of task-level percentages and does not use AI-Assisted Hours as the AI Efficiency denominator.
 
 ---
 
@@ -1413,3 +1422,14 @@ This permits time spent on blocked, deferred, canceled, or otherwise interrupted
 - `Save Task` saves valid task changes without closing the editor, supporting iterative Notes and task-detail editing.
 - `Save and Close` uses the same save behavior and closes the editor only after a successful save.
 - Top and bottom task-editor save controls use shared command logic.
+
+## v4.7.1 AI Efficiency Denominator and Productivity Multiplier
+
+- Replaced the aggregate AI Efficiency denominator: AI Efficiency is now `Total Estimated Time Saved ÷ Total Estimated Effort Without AI`.
+- AI-Assisted Hours remains a supporting utilization metric and is not the aggregate AI Efficiency denominator.
+- The AI report displays both AI Efficiency and Productivity Multiplier, where Productivity Multiplier is `Total Estimated Effort Without AI ÷ Total Time Spent`.
+
+## v4.7.2 AI Efficiency Hover and Export Productivity Multiplier
+
+- Hovering or focusing the main-view AI Efficiency statistic displays the overall Productivity Multiplier for the same qualifying terminal-item scope.
+- The downloaded AI Analysis HTML export includes a per-task Productivity Multiplier column using `Estimated Effort Without AI ÷ Time Spent`.
