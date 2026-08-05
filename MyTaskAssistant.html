@@ -1519,7 +1519,7 @@
   <path d="M36 32.5v7M32.5 36h7" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/>
 </svg></div>
         <div>
-          <h1>MyTaskAssistant <span class="version-badge">v4.6.9</span></h1>
+          <h1>MyTaskAssistant <span class="version-badge">v4.7.0</span></h1>
           <p>Personal task manager designed by Marlon Rabara</p>
         </div>
       </div>
@@ -1712,11 +1712,19 @@
             <path d="M17 7L7 17"></path>
           </svg>
         </button>
-        <button class="dialog-icon-btn primary" id="saveTaskTopBtn" type="button" title="Save Task" aria-label="Save Task">
+        <button class="dialog-icon-btn primary" id="saveTaskTopBtn" type="button" title="Save Task and keep the editor open" aria-label="Save Task and keep the editor open">
           <svg viewBox="0 0 24 24" aria-hidden="true">
             <path d="M5 4.5h11l3 3v12H5z"></path>
             <path d="M8 4.5v5h7v-5"></path>
             <path d="M8 19.5v-6h8v6"></path>
+          </svg>
+        </button>
+        <button class="dialog-icon-btn primary" id="saveAndCloseTopBtn" type="button" title="Save and Close" aria-label="Save and Close">
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M5 4.5h11l3 3v12H5z"></path>
+            <path d="M8 4.5v5h7v-5"></path>
+            <path d="M8 19.5v-6h8v6"></path>
+            <path d="m9 16 2 2 4-4"></path>
           </svg>
         </button>
       </div>
@@ -1831,6 +1839,7 @@
       <button class="btn btn-secondary" id="markCompleteBtn" type="button">Mark Complete</button>
       <button class="btn btn-secondary" id="cancelBtn" type="button">Cancel</button>
       <button class="btn btn-primary" id="saveTaskBtn" type="button">Save Task</button>
+      <button class="btn btn-primary" id="saveAndCloseBtn" type="button">Save and Close</button>
     </div>
   </dialog>
 
@@ -1902,7 +1911,7 @@
     let selectedDependencyIds = [];
     let saved = true;
 
-    const APPLICATION_VERSION = "v4.6.9";
+    const APPLICATION_VERSION = "v4.7.0";
 
     const $ = (id) => document.getElementById(id);
 
@@ -3527,7 +3536,7 @@ Calculated AI Assistance: ${percentage}%`;
       render();
     }
 
-    function saveTaskFromDialog() {
+    function saveTaskFromDialog(closeAfterSave = false) {
       const title = $("taskTitleInput").value.trim();
       if (!title) {
         alert("Please enter a task title.");
@@ -3609,9 +3618,19 @@ Calculated AI Assistance: ${percentage}%`;
         }
       }
 
-      $("taskDialog").close();
       markTaskDataChanged();
       render();
+      if (closeAfterSave) {
+        $("taskDialog").close();
+        return true;
+      }
+
+      editingTaskId = task.id;
+      $("taskIdInput").value = task.id;
+      $("dialogTitle").textContent = "Edit Task";
+      renderSubTasks(task);
+      showTaskEditorTab("detail");
+      return true;
     }
 
 
@@ -4120,8 +4139,10 @@ Calculated AI Assistance: ${percentage}%`;
       $("percentageOfAIAssistanceValue").textContent = value;
     });
 
-    $("saveTaskBtn").addEventListener("click", saveTaskFromDialog);
-    $("saveTaskTopBtn").addEventListener("click", saveTaskFromDialog);
+    $("saveTaskBtn").addEventListener("click", () => saveTaskFromDialog(false));
+    $("saveTaskTopBtn").addEventListener("click", () => saveTaskFromDialog(false));
+    $("saveAndCloseBtn").addEventListener("click", () => saveTaskFromDialog(true));
+    $("saveAndCloseTopBtn").addEventListener("click", () => saveTaskFromDialog(true));
     $("markCompleteBtn").addEventListener("click", markTaskCompleteInDialog);
     $("markCompleteTopBtn").addEventListener("click", markTaskCompleteInDialog);
     $("taskStatusInput").addEventListener("change", () => synchronizeCompletionFields("status"));

@@ -1,6 +1,6 @@
 # MyTaskAssistant
 
-**Version:** v4.6.9
+**Version:** v4.7.0
 
 A local-first, single-file task manager for organizing projects, tracking effort, monitoring AI-assisted productivity, and producing weekly HTML timesheets. No installation, no backend, no database, no account — just open one HTML file in a modern browser.
 
@@ -34,6 +34,7 @@ A local-first, single-file task manager for organizing projects, tracking effort
 - **Due Last Week** — a Due Date dropdown option that shows tasks due in the complete Sunday-through-Saturday week before the current week.
 - **Sub-Tasks tab** — when editing a saved parent task, select **Sub-Tasks** beside **Task Detail** to replace the detail form with full-width rows for direct child tasks. Each row shows title, status, and Time Spent; select a row to load that child into the same task editor window.
 - **Task editor layout** — below AI Assistance, Parent Task and Dependencies are grouped in the left column, while Due Date and Completed Date are grouped in the right column. Priority is immediately above Notes, and Time Spent aligns with Estimated Effort Without AI using equal-height controls.
+- **Task editor saving** — **Save Task** validates and saves task changes while keeping the editor open for iterative Notes or detail updates. **Save and Close** performs the same save and then closes the editor.
 - **Terminal validation** — Completed tasks require both Estimated Hours and Time Spent to be greater than zero. Closed tasks may have zero effort. A positive AI Assistance percentage requires a positive Estimated Effort Without AI value; estimates may validly be lower than, equal to, or greater than Time Spent.
 - **Terminal synchronization** — setting progress to 100% defaults Status to Completed only when Closed was not explicitly selected; setting Status to Completed or Closed sets progress to 100%. An explicit Closed status is preserved during completion-date and progress synchronization.
 - **Completion dates** — a Completed or Closed task with no completion date is assigned today's local date. Changing to a non-terminal status clears the date and automatically reduces 100% progress to 99% so the task is no longer terminal. Entering a completion date of today or earlier automatically sets Status to Completed and progress to 100%.

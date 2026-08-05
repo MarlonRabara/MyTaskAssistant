@@ -1,5 +1,5 @@
 # MyTaskAssistant Specification
-**Application Version:** v4.6.9
+**Application Version:** v4.7.0
 **Last Updated:** 2026-08-01
 
 ## Overview
@@ -952,6 +952,7 @@ The top action bar mirrors the bottom actions:
 - Mark Complete
 - Cancel and Close
 - Save Task
+- Save and Close
 
 Behavior and presentation:
 
@@ -962,6 +963,17 @@ Behavior and presentation:
 - Invokes the same underlying actions as the bottom buttons
 - Mark Complete is shown only when editing an incomplete task
 - The bottom text buttons remain available
+
+## Task Editor Save Actions
+
+The Add/Edit Task dialog provides distinct save actions at the bottom of the dialog:
+
+- `Save Task` persists the current task details to the in-memory main task dataset, updates the runtime unsaved state, and refreshes dependent UI values without closing the task editor. It supports iterative note editing and saving other task-detail changes while the dialog remains open.
+- `Save and Close` performs the same persistence, validation, unsaved-state update, and UI refresh behavior as `Save Task`, then closes the task editor after a successful save.
+- `Save and Close` is positioned immediately to the right of `Save Task` in the bottom action area.
+- If validation fails, neither action persists changes or closes the task editor.
+- The task editor's top actions include corresponding Save Task and Save and Close controls that invoke the same shared command logic as the bottom actions.
+- The existing Cancel and Close action does not save changes made since the most recent successful Save Task or Save and Close action.
 
 ## Robot Column
 
@@ -1394,3 +1406,10 @@ This permits time spent on blocked, deferred, canceled, or otherwise interrupted
 
 - Defined a terminal item as any `Completed` or `Closed` task, including archived tasks. Terminal describes workflow state and does not imply deletion.
 - The main-view AI Efficiency statistic uses qualifying terminal items from the full task dataset, including archived records, and labels supporting counts according to that same scope.
+
+## v4.7.0 Task Editor Save and Close
+
+- Added `Save and Close` immediately to the right of the bottom `Save Task` button.
+- `Save Task` saves valid task changes without closing the editor, supporting iterative Notes and task-detail editing.
+- `Save and Close` uses the same save behavior and closes the editor only after a successful save.
+- Top and bottom task-editor save controls use shared command logic.
