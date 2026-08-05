@@ -1519,7 +1519,7 @@
   <path d="M36 32.5v7M32.5 36h7" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/>
 </svg></div>
         <div>
-          <h1>MyTaskAssistant <span class="version-badge">v4.6.8</span></h1>
+          <h1>MyTaskAssistant <span class="version-badge">v4.6.9</span></h1>
           <p>Personal task manager designed by Marlon Rabara</p>
         </div>
       </div>
@@ -1580,10 +1580,10 @@
           <div class="metric-value" id="metricProgress">0%</div>
           <div class="metric-detail">Average completion</div>
         </article>
-        <article class="metric" title="Weighted average AI efficiency based on AI-assisted hours. Estimated human hours saved per AI-assisted hour.">
+        <article class="metric" title="Weighted average AI efficiency based on AI-assisted hours from qualifying Completed and Closed tasks, including archived tasks. Estimated human hours saved per AI-assisted hour.">
           <div class="metric-label">AI Efficiency</div>
           <div class="metric-value" id="metricAiEfficiency">0%</div>
-          <div class="metric-detail" id="metricAiEfficiencyDetail">No qualifying AI-assisted work</div>
+          <div class="metric-detail" id="metricAiEfficiencyDetail">No qualifying terminal items</div>
         </article>
       </section>
 
@@ -1902,7 +1902,7 @@
     let selectedDependencyIds = [];
     let saved = true;
 
-    const APPLICATION_VERSION = "v4.6.8";
+    const APPLICATION_VERSION = "v4.6.9";
 
     const $ = (id) => document.getElementById(id);
 
@@ -2645,7 +2645,7 @@ Calculated AI Assistance: ${percentage}%`;
       const active = total - completed;
       const overdue = activeTaskSet.filter(t => !isComplete(t) && daysRemaining(t.dueDate) < 0).length;
       const average = total ? Math.round(activeTaskSet.reduce((sum, t) => sum + Number(t.percentComplete || 0), 0) / total) : 0;
-      const aiMetrics = calculateAiEfficiencyMetrics(activeTaskSet);
+      const aiMetrics = calculateAiEfficiencyMetrics(data.tasks);
 
       $("metricTotal").textContent = total;
       $("metricActive").textContent = active;
@@ -2653,8 +2653,8 @@ Calculated AI Assistance: ${percentage}%`;
       $("metricProgress").textContent = average + "%";
       $("metricAiEfficiency").textContent = `${aiMetrics.averageAiEfficiency.toFixed(1)}%`;
       $("metricAiEfficiencyDetail").textContent = aiMetrics.qualifyingTaskCount
-        ? `${aiMetrics.qualifyingTaskCount} qualifying terminal task${aiMetrics.qualifyingTaskCount === 1 ? "" : "s"}`
-        : "No qualifying AI-assisted work";
+        ? `${aiMetrics.qualifyingTaskCount} qualifying terminal item${aiMetrics.qualifyingTaskCount === 1 ? "" : "s"}`
+        : "No qualifying terminal items";
 
       $("navAll").textContent = total;
       $("navActive").textContent = active;

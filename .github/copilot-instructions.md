@@ -9,3 +9,4 @@
 - When AI Assistance is greater than 0%, describe the remainder as the "non-AI-assisted portion" of human-directed partnership work. 
 - Avoid describing non-AI-assisted portions of recorded work as "human-only time". Treat work as a human-AI partnership; use neutral language such as "non-AI-assisted portion" or "remaining portion of recorded time".
 - AI efficiency metrics must be derived from task source values, never by averaging task-level percentages. Use weighted efficiency: total estimated time saved divided by total AI-assisted hours. Support zero and negative time savings, completed/Closed task inclusion rules, and full-precision intermediate calculations.
+- Use "terminal item" rather than "terminated item" for tasks with status Completed or Closed. Do not use terminology that could imply a task was deleted.

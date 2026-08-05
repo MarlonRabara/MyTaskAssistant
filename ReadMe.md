@@ -1,6 +1,6 @@
 # MyTaskAssistant
 
-**Version:** v4.6.8
+**Version:** v4.6.9
 
 A local-first, single-file task manager for organizing projects, tracking effort, monitoring AI-assisted productivity, and producing weekly HTML timesheets. No installation, no backend, no database, no account — just open one HTML file in a modern browser.
 
@@ -44,7 +44,7 @@ A local-first, single-file task manager for organizing projects, tracking effort
   - `timeSpent` — actual hours worked
   - `aiAssistancePercentage` — how much AI assisted (0–100%)
   - `estimatedEffortWithoutAI` — hours the task would have taken without AI
-- **AI Efficiency** — the statistics section displays weighted AI efficiency for qualifying completed or Closed tasks: total estimated time saved divided by total AI-assisted hours. The AI Analysis view also reports estimated time saved, AI-assisted hours, overall time reduction, productivity multiplier, AI utilization, and qualifying-task count. Negative time-saved results remain visible when AI-assisted work exceeded the estimated effort without AI.
+- **AI Efficiency** — the statistics section displays weighted AI efficiency for qualifying terminal items (Completed or Closed), including archived tasks: total estimated time saved divided by total AI-assisted hours. Terminal describes workflow state, not deletion. The AI Analysis view also reports estimated time saved, AI-assisted hours, overall time reduction, productivity multiplier, AI utilization, and qualifying-task count. Negative time-saved results remain visible when AI-assisted work exceeded the estimated effort without AI.
 - **AI Hours Saved** — computed as `estimatedEffortWithoutAI − timeSpent`; MyTaskAssistant measures AI *productivity*, not AI usage.
 - **🤖 AI Analysis** — a read-only weekly view for qualifying non-archived Completed or Closed AI-assisted terminal tasks. It reports weighted AI Efficiency, AI-Assisted Hours, Estimated Time Saved, Overall Time Reduction, Productivity Multiplier, AI Utilization, and qualifying-task count in a downloadable standalone HTML report.
 - **Weekly Timesheet** — generate a printable, standalone HTML timesheet for any Sunday-through-Saturday week from completed non-archived terminal tasks, with editable daily allocations initially placed on each task's completion date.

@@ -1,5 +1,5 @@
 # MyTaskAssistant Specification
-**Application Version:** v4.6.8
+**Application Version:** v4.6.9
 **Last Updated:** 2026-08-01
 
 ## Overview
@@ -382,6 +382,8 @@ A task qualifies for official AI-efficiency aggregate metrics only when all of t
 - Estimated Effort Without AI is finite and greater than `0`.
 - The task is terminal with final actual-time values: Status is `Completed` or `Closed`.
 
+A **terminal item** is any task whose status is `Completed` or `Closed`, regardless of whether it is archived. Archived terminal tasks remain terminal items and are included when a UI count, label, tooltip, or calculation scope is defined as all terminal items. Terminal describes a task's workflow state only; it does not mean the task was deleted.
+
 In-progress tasks may display provisional task-level results, but they are excluded from official completed-task aggregate metrics unless the aggregate is explicitly labeled provisional. Aggregate metrics must respect their active reporting scope, such as the current filtered task set, selected project, or selected date range. Every numerator and denominator in an individual aggregate must be calculated from the same qualifying task set.
 
 ## Weighted Aggregate Calculation
@@ -418,7 +420,8 @@ The application may provide a general productivity multiplier or AI utilization 
 
 The top statistics section contains `Total Tasks`, `Active`, `Overdue`, `Overall Progress`, and an `AI Efficiency` box immediately after `Overall Progress`.
 
-- The `AI Efficiency` box displays Average AI Efficiency for qualifying completed or Closed tasks in the active non-archived reporting scope.
+- The main-view `AI Efficiency` box displays Average AI Efficiency for qualifying terminal items across the full task dataset, including archived tasks. Its qualifying-task count and supporting label must use that same full-dataset scope.
+- The box may label the count as `qualifying terminal items`; this count includes only terminal items that also satisfy the AI-efficiency source-value rules. A separate terminal-item count, when displayed, includes every Completed or Closed task regardless of archive state or AI data completeness.
 - The box tooltip states: `Weighted average AI efficiency based on AI-assisted hours. Estimated human hours saved per AI-assisted hour.`
 - When no task qualifies, the box displays `0%` and exposes the no-qualifying-work empty-state explanation.
 
@@ -1386,3 +1389,8 @@ This permits time spent on blocked, deferred, canceled, or otherwise interrupted
 - Clarified that `Closed` and `Completed` are separate terminal statuses even though both use `100%` progress.
 - Saving, loading, synchronization, normalization, rendering, filtering, reporting, and parent-rollup logic must preserve an explicitly selected or stored `Closed` status and must not revert it to `Completed`.
 - `Completed` remains only the default terminal status when 100% progress or a completion date is entered without an explicit `Closed` selection.
+
+## v4.6.9 Main AI Efficiency Terminal-Item Scope
+
+- Defined a terminal item as any `Completed` or `Closed` task, including archived tasks. Terminal describes workflow state and does not imply deletion.
+- The main-view AI Efficiency statistic uses qualifying terminal items from the full task dataset, including archived records, and labels supporting counts according to that same scope.
