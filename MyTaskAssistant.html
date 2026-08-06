@@ -1519,7 +1519,7 @@
   <path d="M36 32.5v7M32.5 36h7" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/>
 </svg></div>
         <div>
-          <h1>MyTaskAssistant <span class="version-badge">v4.7.2</span></h1>
+          <h1>MyTaskAssistant <span class="version-badge">v4.7.3</span></h1>
           <p>Personal task manager designed by Marlon Rabara</p>
         </div>
       </div>
@@ -1911,7 +1911,7 @@
     let selectedDependencyIds = [];
     let saved = true;
 
-    const APPLICATION_VERSION = "v4.7.2";
+    const APPLICATION_VERSION = "v4.7.3";
 
     const $ = (id) => document.getElementById(id);
 
@@ -1926,6 +1926,12 @@
     function markTaskDataChanged() {
       setSavedState(false);
     }
+
+    window.addEventListener("beforeunload", (event) => {
+      if (saved) return;
+      event.preventDefault();
+      event.returnValue = "";
+    });
 
     function escapeHtml(value) {
       return String(value ?? "")

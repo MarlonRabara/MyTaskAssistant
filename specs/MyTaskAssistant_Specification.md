@@ -1433,3 +1433,10 @@ This permits time spent on blocked, deferred, canceled, or otherwise interrupted
 
 - Hovering or focusing the main-view AI Efficiency statistic displays the overall Productivity Multiplier for the same qualifying terminal-item scope.
 - The downloaded AI Analysis HTML export includes a per-task Productivity Multiplier column using `Estimated Effort Without AI ÷ Time Spent`.
+
+## v4.7.3 Unsaved Browser Exit Confirmation
+
+- When the runtime `saved` state is `false`, the application registers browser `beforeunload` behavior for closing, reloading, or navigating away from the page.
+- The handler requests the browser's standard unsaved-changes confirmation dialog, allowing the user to remain in the application or proceed and discard unsaved changes.
+- The application must not attempt to supply custom dialog text or claim it can prevent the user from leaving after the user confirms the browser prompt.
+- When `saved` is `true`, no exit confirmation is requested.
