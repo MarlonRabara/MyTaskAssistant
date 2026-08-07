@@ -1,6 +1,6 @@
 # MyTaskAssistant
 
-**Version:** v4.7.7
+**Version:** v4.7.8
 
 A local-first, single-file task manager for organizing projects, tracking effort, monitoring AI-assisted productivity, and producing weekly HTML timesheets. No installation, no backend, no database, no account — just open one HTML file in a modern browser.
 
@@ -39,6 +39,7 @@ A local-first, single-file task manager for organizing projects, tracking effort
 - **Task editor saving** — **Save Task** validates and saves task changes while keeping the editor open for iterative Notes or detail updates. **Save and Close** performs the same save and then closes the editor.
 - **Parent editor navigation** — when editing a child task, select its displayed parent task to open that parent in the same editor. The separate × control still removes the parent relationship.
 - **Editor cloning and sub-task creation** — existing tasks can be cloned from the editor before Save Task, opening the clone in the same dialog. The Sub-Tasks tab also provides Add Sub-Task, which opens a new task with the current task preselected as its parent.
+- **Automatic progress option** — the runtime-only Auto-Update Percent Complete checkbox below Time Spent defaults on when a task opens. With a positive Estimated Hours value, changing Time Spent updates progress from Time Spent ÷ Estimated Hours; clear it to manage progress manually.
 - **Terminal validation** — Completed tasks require both Estimated Hours and Time Spent to be greater than zero. Closed tasks may have zero effort. A positive AI Assistance percentage requires a positive Estimated Effort Without AI value; estimates may validly be lower than, equal to, or greater than Time Spent.
 - **Terminal synchronization** — setting progress to 100% defaults Status to Completed only when Closed was not explicitly selected; setting Status to Completed or Closed sets progress to 100%. An explicit Closed status is preserved during completion-date and progress synchronization.
 - **Completion dates** — a Completed or Closed task with no completion date is assigned today's local date. Changing to a non-terminal status clears the date and automatically reduces 100% progress to 99% so the task is no longer terminal. Entering a completion date of today or earlier automatically sets Status to Completed and progress to 100%.

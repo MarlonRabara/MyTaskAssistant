@@ -1018,6 +1018,19 @@ The Add/Edit Task dialog provides distinct save actions at the bottom of the dia
 - The task editor's top actions include corresponding Save Task and Save and Close controls that invoke the same shared command logic as the bottom actions.
 - The existing Cancel and Close action does not save changes made since the most recent successful Save Task or Save and Close action.
 
+## Task Editor Auto-Update Percent Complete
+
+The task editor provides a runtime-only `Auto-Update Percent Complete` checkbox to help users keep progress aligned with recorded effort.
+
+- The checkbox is positioned directly below the Time Spent field, in the left side of the existing Time Spent / Estimated Effort Without AI row. It appears to the left of the Estimated Effort Without AI instructions. The existing task-editor layout and field order must not otherwise be rearranged.
+- The checkbox is selected by default whenever a task is loaded or opened in the task editor, including when opening an existing task, a clone, or a new task.
+- The checkbox value is editor-only runtime state. It is not stored in task JSON, exports, or any other persisted dataset.
+- While selected, changing Time Spent automatically recalculates Percent Complete only when both Time Spent and Estimated Hours have valid values and Estimated Hours is greater than zero.
+- Percent Complete is calculated as `(Time Spent ÷ Estimated Hours) × 100` and is constrained to the editor's valid `0` through `100` percent range.
+- If Time Spent or Estimated Hours is missing or invalid, or Estimated Hours is zero, changing Time Spent does not automatically change Percent Complete.
+- When the checkbox is cleared, changing Time Spent does not change Percent Complete; the user remains responsible for entering Percent Complete manually.
+- The automatic update follows the existing percent-complete/status synchronization rules after the calculated value is applied.
+
 ## Task Editor Parent Navigation
 
 When editing an existing child task, the displayed selected parent task is a navigation target:
@@ -1520,3 +1533,9 @@ This permits time spent on blocked, deferred, canceled, or otherwise interrupted
 - Added a left-panel Recently Accessed view for tasks opened during the rolling prior 24 hours, ordered from most recently accessed to least recently accessed.
 - Clarified backward-compatible loading: datasets without `lastAccessedAt` load without errors and simply have no recently accessed history until tasks are opened.
 - Access tracking participates in the existing unsaved-state and browser exit-confirmation behavior until saved.
+
+## v4.7.8 Task Editor Auto-Update Percent Complete
+
+- Added a runtime-only Auto-Update Percent Complete checkbox below Time Spent without rearranging the existing editor layout.
+- It defaults to selected each time a task is loaded into the editor and is never persisted.
+- When selected, changing Time Spent recalculates Percent Complete from Time Spent divided by Estimated Hours when both are valid and Estimated Hours is greater than zero. When cleared, progress remains manual.

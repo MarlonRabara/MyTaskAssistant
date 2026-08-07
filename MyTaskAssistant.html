@@ -1162,6 +1162,16 @@
       gap: 16px;
     }
     .task-effort-row { align-items: start; }
+    .auto-progress-control {
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      margin-top: 8px;
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 600;
+    }
+    .auto-progress-control input { width: 16px; height: 16px; margin: 0; }
     .relationship-stack,
     .date-stack {
       display: grid;
@@ -1542,7 +1552,7 @@
   <path d="M36 32.5v7M32.5 36h7" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/>
 </svg></div>
         <div>
-          <h1>MyTaskAssistant <span class="version-badge">v4.7.7</span></h1>
+          <h1>MyTaskAssistant <span class="version-badge">v4.7.8</span></h1>
           <p>Personal task manager designed by Marlon Rabara</p>
         </div>
       </div>
@@ -1803,6 +1813,10 @@
         <div class="form-group">
           <label for="taskHoursInput">Time spent (hours)</label>
           <input class="field" id="taskHoursInput" type="number" min="0" step="0.25" value="0" placeholder="Example: 1.5" />
+          <label class="auto-progress-control" for="autoUpdatePercentCompleteInput">
+            <input id="autoUpdatePercentCompleteInput" type="checkbox" checked />
+            Auto-Update Percent Complete
+          </label>
         </div>
         <div class="form-group">
           <label for="estimatedEffortWithoutAIInput" title="Estimate how long this task would have taken if AI had not been available.&#10;&#10;Required and greater than zero whenever AI Assistance is greater than 0%.">Estimated Effort Without AI (hours)</label>
@@ -1947,7 +1961,7 @@
     let selectedDependencyIds = [];
     let saved = true;
 
-    const APPLICATION_VERSION = "v4.7.7";
+    const APPLICATION_VERSION = "v4.7.8";
 
     const $ = (id) => document.getElementById(id);
 
@@ -2550,6 +2564,16 @@ Calculated AI Assistance: ${percentage}%`;
       } else if (!completedDateInput.value) {
         completedDateInput.value = today;
       }
+    }
+
+    function updatePercentCompleteFromTimeSpent() {
+      if (!$("autoUpdatePercentCompleteInput").checked) return;
+      const timeSpent = Number($("taskHoursInput").value);
+      const estimatedHours = Number($("estimatedHoursInput").value);
+      if (!Number.isFinite(timeSpent) || !Number.isFinite(estimatedHours) || estimatedHours <= 0) return;
+
+      $("taskProgressInput").value = Math.min(100, Math.max(0, Math.round((timeSpent / estimatedHours) * 100)));
+      synchronizeCompletionFields("progress");
     }
 
     function moveTaskWithinLevel(draggedId, targetId) {
@@ -3386,12 +3410,14 @@ Calculated AI Assistance: ${percentage}%`;
       $("taskHoursInput").value = displayTask?.timeSpent ?? 0;
       $("estimatedHoursInput").value = displayTask?.estimatedHours ?? "";
       $("estimatedEffortWithoutAIInput").value = displayTask?.estimatedEffortWithoutAI ?? "";
+      $("autoUpdatePercentCompleteInput").checked = true;
       ["taskStatusInput", "taskProgressInput", "taskHoursInput", "estimatedHoursInput", "estimatedEffortWithoutAIInput", "taskCompletedDateInput"].forEach(id => {
         $(id).disabled = hasChildTasks;
         $(id).title = hasChildTasks
           ? "This parent task value is calculated from its child tasks."
           : "";
       });
+      $("autoUpdatePercentCompleteInput").disabled = hasChildTasks;
       $("percentageOfAIAssistanceInput").value = displayTask?.aiAssistancePercentage ?? 0;
       $("percentageOfAIAssistanceInput").disabled = hasChildTasks;
       $("percentageOfAIAssistanceInput").title = hasChildTasks
@@ -4239,6 +4265,7 @@ Calculated AI Assistance: ${percentage}%`;
     $("markCompleteTopBtn").addEventListener("click", markTaskCompleteInDialog);
     $("taskStatusInput").addEventListener("change", () => synchronizeCompletionFields("status"));
     $("taskProgressInput").addEventListener("change", () => synchronizeCompletionFields("progress"));
+    $("taskHoursInput").addEventListener("input", updatePercentCompleteFromTimeSpent);
     $("taskCompletedDateInput").addEventListener("change", () => synchronizeCompletionFields("completedDate"));
     $("expandNotesBtn").addEventListener("click", () => {
       const expanded = $("taskNotesInput").classList.toggle("expanded");
