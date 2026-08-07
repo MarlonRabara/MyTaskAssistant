@@ -769,6 +769,24 @@
       font-weight: 700;
     }
 
+    .selected-task-navigation {
+      padding: 0;
+      background: transparent;
+      color: inherit;
+      font: inherit;
+      font-weight: inherit;
+      text-align: left;
+      text-decoration: underline;
+      text-underline-offset: 2px;
+    }
+
+    .selected-task-navigation:hover { color: var(--accent-strong); }
+    .selected-task-navigation:focus-visible {
+      outline: 2px solid var(--accent);
+      outline-offset: 2px;
+      border-radius: 2px;
+    }
+
     .selected-list {
       display: flex;
       flex-wrap: wrap;
@@ -1151,6 +1169,11 @@
       gap: 16px;
     }
     .subtask-list { display: grid; gap: 8px; }
+    .subtask-panel-actions {
+      display: flex;
+      justify-content: flex-end;
+      margin-bottom: 12px;
+    }
     .subtask-list button {
       width: 100%;
       display: grid;
@@ -1519,7 +1542,7 @@
   <path d="M36 32.5v7M32.5 36h7" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/>
 </svg></div>
         <div>
-          <h1>MyTaskAssistant <span class="version-badge">v4.7.3</span></h1>
+          <h1>MyTaskAssistant <span class="version-badge">v4.7.7</span></h1>
           <p>Personal task manager designed by Marlon Rabara</p>
         </div>
       </div>
@@ -1531,6 +1554,7 @@
         <button type="button" id="navOverdueBtn"><span>Overdue</span><span id="navOverdue">0</span></button>
         <button type="button" id="navMostRecentBtn" title="Shows the 10 tasks with the newest created dates, ordered from most recently created to least recently created."><span>Most Recent</span><span id="navMostRecent">0</span></button>
         <button type="button" id="navRecentlyCreatedBtn" title="Shows tasks created during the last 24 hours."><span>Recently Created</span><span id="navRecentlyCreated">0</span></button>
+        <button type="button" id="navRecentlyAccessedBtn" title="Shows tasks opened in the task editor during the last 24 hours."><span>Recently Accessed</span><span id="navRecentlyAccessed">0</span></button>
         <button type="button" id="navArchiveBtn" title="Shows archived task records. Archived tasks are hidden from normal views, timesheets, and AI Analysis."><span>Archive</span><span id="navArchive">0</span></button>
       </nav>
 
@@ -1712,6 +1736,14 @@
             <path d="M17 7L7 17"></path>
           </svg>
         </button>
+        <button class="dialog-icon-btn" id="cloneTaskTopBtn" type="button" title="Clone Task" aria-label="Clone Task">
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M6 3.75h8.5L18 7.25V20.25H6z"></path>
+            <path d="M14.5 3.75v3.5H18"></path>
+            <path d="M18.5 13.5v6"></path>
+            <path d="M15.5 16.5h6"></path>
+          </svg>
+        </button>
         <button class="dialog-icon-btn primary" id="saveTaskTopBtn" type="button" title="Save Task and keep the editor open" aria-label="Save Task and keep the editor open">
           <svg viewBox="0 0 24 24" aria-hidden="true">
             <path d="M5 4.5h11l3 3v12H5z"></path>
@@ -1832,12 +1864,16 @@
       </div>
         </div>
         <div class="task-editor-panel" id="subTasksPanel" role="tabpanel" hidden>
+          <div class="subtask-panel-actions">
+            <button class="btn btn-primary" id="addSubTaskBtn" type="button">Add Sub-Task</button>
+          </div>
           <div id="subTasksList" class="subtask-list"></div>
         </div>
     </div>
     <div class="dialog-foot">
       <button class="btn btn-secondary" id="markCompleteBtn" type="button">Mark Complete</button>
       <button class="btn btn-secondary" id="cancelBtn" type="button">Cancel</button>
+      <button class="btn btn-secondary" id="cloneTaskBtn" type="button">Clone Task</button>
       <button class="btn btn-primary" id="saveTaskBtn" type="button">Save Task</button>
       <button class="btn btn-primary" id="saveAndCloseBtn" type="button">Save and Close</button>
     </div>
@@ -1911,7 +1947,7 @@
     let selectedDependencyIds = [];
     let saved = true;
 
-    const APPLICATION_VERSION = "v4.7.3";
+    const APPLICATION_VERSION = "v4.7.7";
 
     const $ = (id) => document.getElementById(id);
 
@@ -2033,7 +2069,8 @@
         dependsOn: Array.isArray(task.dependsOn ?? task.dependencies) ? (task.dependsOn ?? task.dependencies).map(String) : [],
         parentId: task.parentId ?? task.parentTaskId ? String(task.parentId ?? task.parentTaskId) : null,
         createdAt: task.createdAt ?? new Date().toISOString(),
-        updatedAt: task.updatedAt ?? new Date().toISOString()
+        updatedAt: task.updatedAt ?? new Date().toISOString(),
+        lastAccessedAt: task.lastAccessedAt ?? null
       };
     }
 
@@ -2248,6 +2285,18 @@
       const createdAt = new Date(task.createdAt);
       if (Number.isNaN(createdAt.getTime())) return false;
       return createdAt.getTime() >= now.getTime() - 24 * 60 * 60 * 1000 && createdAt.getTime() <= now.getTime();
+    }
+
+    function accessedWithinLast24Hours(task, now = new Date()) {
+      const lastAccessedAt = new Date(task.lastAccessedAt);
+      if (Number.isNaN(lastAccessedAt.getTime())) return false;
+      return lastAccessedAt.getTime() >= now.getTime() - 24 * 60 * 60 * 1000 && lastAccessedAt.getTime() <= now.getTime();
+    }
+
+    function mostRecentlyAccessedTasks(tasks) {
+      return tasks
+        .slice()
+        .sort((a, b) => String(b.lastAccessedAt || "").localeCompare(String(a.lastAccessedAt || "")) || String(b.id).localeCompare(String(a.id)));
     }
 
     function childTasks(parentId, archived = null) {
@@ -2629,6 +2678,7 @@ Calculated AI Assistance: ${percentage}%`;
         if (forcedView === "completed" && !isComplete(task)) return false;
         if (forcedView === "overdue" && !(daysRemaining(task.dueDate) < 0 && !isComplete(task))) return false;
         if (forcedView === "recently-created" && !createdWithinLast24Hours(task)) return false;
+        if (forcedView === "recently-accessed" && !accessedWithinLast24Hours(task)) return false;
         return true;
       });
     }
@@ -2682,6 +2732,7 @@ Calculated AI Assistance: ${percentage}%`;
       $("navOverdue").textContent = overdue;
       $("navMostRecent").textContent = Math.min(total, 10);
       $("navRecentlyCreated").textContent = activeTaskSet.filter(task => createdWithinLast24Hours(task)).length;
+      $("navRecentlyAccessed").textContent = activeTaskSet.filter(task => accessedWithinLast24Hours(task)).length;
       $("navArchive").textContent = archived;
     }
 
@@ -2807,10 +2858,12 @@ Calculated AI Assistance: ${percentage}%`;
         ? mostRecentTasks(matchedTasks)
         : forcedView === "recently-created"
           ? mostRecentTasks(matchedTasks, Number.POSITIVE_INFINITY)
+          : forcedView === "recently-accessed"
+            ? mostRecentlyAccessedTasks(matchedTasks)
           : matchedTasks;
       const tasks = tasksWithVisibleParents(baseTasks);
-      const orderedEntries = forcedView === "most-recent" || forcedView === "recently-created"
-        ? mostRecentTasks(tasks, Number.POSITIVE_INFINITY).map(task => ({ task, depth: taskDepth(task) }))
+      const orderedEntries = forcedView === "most-recent" || forcedView === "recently-created" || forcedView === "recently-accessed"
+        ? (forcedView === "recently-accessed" ? mostRecentlyAccessedTasks(tasks) : mostRecentTasks(tasks, Number.POSITIVE_INFINITY)).map(task => ({ task, depth: taskDepth(task) }))
         : orderedTaskTree(tasks);
       if (!orderedEntries.length) {
         $("taskRows").innerHTML = '<tr><td colspan="12"><div class="empty">No tasks match the current filters.</div></td></tr>';
@@ -3274,6 +3327,7 @@ Calculated AI Assistance: ${percentage}%`;
       normalizePriorityOrders();
       markTaskDataChanged();
       render();
+      return clone;
     }
 
     function toggleTaskArchive(id) {
@@ -3311,6 +3365,12 @@ Calculated AI Assistance: ${percentage}%`;
     function openTaskDialog(id = null, defaults = {}) {
       editingTaskId = id;
       const task = id ? data.tasks.find(t => t.id === id) : null;
+      if (task) {
+        const accessedAt = new Date().toISOString();
+        task.lastAccessedAt = accessedAt;
+        task.updatedAt = accessedAt;
+        markTaskDataChanged();
+      }
       const rollup = task ? taskRollup(task) : null;
       const hasChildTasks = Boolean(rollup);
       const displayTask = rollup ? { ...task, ...rollup } : task;
@@ -3360,13 +3420,16 @@ Calculated AI Assistance: ${percentage}%`;
       const incompleteDescendantCount = task && rollup ? terminalDescendantTasks(task).filter(child => !isComplete(child)).length : 0;
       $("markCompleteBtn").style.display = showMarkComplete ? "inline-flex" : "none";
       $("markCompleteTopBtn").style.display = showMarkComplete ? "inline-flex" : "none";
+      $("cloneTaskBtn").style.display = task ? "inline-flex" : "none";
+      $("cloneTaskTopBtn").style.display = task ? "inline-flex" : "none";
+      $("addSubTaskBtn").hidden = !task;
       ["markCompleteBtn", "markCompleteTopBtn"].forEach(id => {
         $(id).disabled = incompleteDescendantCount > 0;
         $(id).title = incompleteDescendantCount > 0
           ? `This task cannot be completed because ${incompleteDescendantCount} sub-task${incompleteDescendantCount === 1 ? "" : "s"} remain incomplete. Review the Sub-Tasks tab.`
           : "Mark Complete";
       });
-      $("taskDialog").showModal();
+      if (!$("taskDialog").open) $("taskDialog").showModal();
     }
 
     function showTaskEditorTab(tab) {
@@ -3394,6 +3457,18 @@ Calculated AI Assistance: ${percentage}%`;
       $("subTasksList").querySelectorAll("[data-subtask-edit-id]").forEach(button => {
         button.addEventListener("click", () => openTaskDialog(button.dataset.subtaskEditId));
       });
+    }
+
+    function cloneTaskFromDialog() {
+      if (!editingTaskId) return;
+      const clone = cloneTask(editingTaskId);
+      if (clone) openTaskDialog(clone.id);
+    }
+
+    function addSubTaskFromDialog() {
+      const parent = editingTaskId ? data.tasks.find(task => task.id === editingTaskId) : null;
+      if (!parent) return;
+      openTaskDialog(null, { parentId: parent.id, projectId: parent.projectId || "" });
     }
 
 
@@ -3424,10 +3499,13 @@ Calculated AI Assistance: ${percentage}%`;
       container.innerHTML = `
         <div class="selected-list">
           <span class="selected-value">
-            ${escapeHtml(task.title)}
+            <button type="button" class="selected-task-navigation" id="openParentTaskBtn" aria-label="Open parent task ${escapeHtml(task.title)}">
+              ${escapeHtml(task.title)}
+            </button>
             <button type="button" class="chip-remove" id="removeParentBtn" aria-label="Remove parent task">×</button>
           </span>
         </div>`;
+      $("openParentTaskBtn").addEventListener("click", () => openTaskDialog(task.id));
       $("removeParentBtn").addEventListener("click", () => {
         selectedParentId = null;
         renderSelectedParent();
@@ -4102,6 +4180,7 @@ Calculated AI Assistance: ${percentage}%`;
         overdue: $("navOverdueBtn"),
         "most-recent": $("navMostRecentBtn"),
         "recently-created": $("navRecentlyCreatedBtn"),
+        "recently-accessed": $("navRecentlyAccessedBtn"),
         archive: $("navArchiveBtn")
       };
       (map[view] || document.querySelector(".nav button")).classList.add("active");
@@ -4152,6 +4231,8 @@ Calculated AI Assistance: ${percentage}%`;
 
     $("saveTaskBtn").addEventListener("click", () => saveTaskFromDialog(false));
     $("saveTaskTopBtn").addEventListener("click", () => saveTaskFromDialog(false));
+    $("cloneTaskBtn").addEventListener("click", cloneTaskFromDialog);
+    $("cloneTaskTopBtn").addEventListener("click", cloneTaskFromDialog);
     $("saveAndCloseBtn").addEventListener("click", () => saveTaskFromDialog(true));
     $("saveAndCloseTopBtn").addEventListener("click", () => saveTaskFromDialog(true));
     $("markCompleteBtn").addEventListener("click", markTaskCompleteInDialog);
@@ -4166,6 +4247,7 @@ Calculated AI Assistance: ${percentage}%`;
     });
     $("taskDetailTab").addEventListener("click", () => showTaskEditorTab("detail"));
     $("subTasksTab").addEventListener("click", () => showTaskEditorTab("subtasks"));
+    $("addSubTaskBtn").addEventListener("click", addSubTaskFromDialog);
     $("taskParentSearch").addEventListener("input", renderParentResults);
     $("taskParentSearch").addEventListener("focus", renderParentResults);
     $("taskDependencySearch").addEventListener("input", renderDependencyResults);
@@ -4186,6 +4268,7 @@ Calculated AI Assistance: ${percentage}%`;
     $("navOverdueBtn").addEventListener("click", () => setView("overdue"));
     $("navMostRecentBtn").addEventListener("click", () => setView("most-recent"));
     $("navRecentlyCreatedBtn").addEventListener("click", () => setView("recently-created"));
+    $("navRecentlyAccessedBtn").addEventListener("click", () => setView("recently-accessed"));
     $("navArchiveBtn").addEventListener("click", () => setView("archive"));
     document.querySelector(".nav button").addEventListener("click", () => setView("all"));
 

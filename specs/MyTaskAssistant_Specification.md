@@ -531,6 +531,16 @@ An archived source task may be cloned from the Archive view, but the clone is cr
 
 If the archived source task is a child task, cloning it automatically sets each archived ancestor in its parent chain to `archived: false` so the unarchived clone has visible hierarchy context in normal task views.
 
+### Task Editor Clone Action
+
+When editing an existing saved task, the task editor provides a `Clone Task` action:
+
+- The bottom `Clone Task` button appears immediately before `Save Task`.
+- The editor header includes a matching compact Clone Task action that invokes the same clone behavior as the bottom button.
+- Selecting Clone Task uses the existing clone rules, creates a new task record, updates the runtime unsaved state, refreshes dependent UI, and opens the cloned task in the same editor dialog.
+- Clone Task is unavailable while creating a new, unsaved task because no source task record exists to clone.
+- Clone Task does not save pending, unsaved edits currently entered in the editor; it clones the persisted source task record.
+
 ## Create Child Task
 
 Selecting Create Child:
@@ -634,6 +644,7 @@ Supports:
 - Due-date filter
 - Archive view
 - Recently Created view
+- Recently Accessed view
 
 ## Recently Created View
 
@@ -646,6 +657,27 @@ The left navigation includes a `Recently Created` view that shows tasks created 
 - Normal archive boundaries remain in force: non-archived tasks participate in the normal `Recently Created` view, while archived tasks participate only when the Archive view is selected.
 - Parent-context rendering continues to apply: a visible recently created child includes its eligible parent hierarchy context in the main task grid without causing a parent to count as a Recently Created match.
 - The view label includes a tooltip or accessible description stating that it shows tasks created in the last 24 hours.
+
+## Task Access Tracking and Recently Accessed View
+
+Each task record includes an optional `lastAccessedAt` timestamp that tracks the most recent time the task was accessed.
+
+- Accessing a task means opening that task's details in the task editor, including through a grid Edit action, row double-click, a Notes `...(see more)` action, parent-task navigation, sub-task navigation, or opening a newly created clone after the clone record is created.
+- When a task is accessed, the application sets that task's `lastAccessedAt` value to the current timestamp and updates its `updatedAt` value.
+- The access timestamp is persisted in the task JSON data and is preserved by normal load, save, export, clone, archive, and unarchive workflows.
+- Existing task records without `lastAccessedAt` remain valid and do not qualify for recently accessed results until they are accessed.
+- Loading a dataset whose task records omit `lastAccessedAt` must succeed without errors or crashes. The application treats the missing value as unavailable access history rather than requiring a migration or rejecting the dataset.
+- Updating access tracking marks the runtime dataset unsaved, so the existing unsaved-state indicator and browser exit confirmation apply until Save completes successfully.
+
+The left navigation includes a `Recently Accessed` view that shows tasks accessed during the trailing 24-hour period.
+
+- A task qualifies when its `lastAccessedAt` timestamp is greater than or equal to the current local date/time minus 24 hours.
+- The comparison is rolling rather than calendar-day based and is evaluated when the task grid is rendered or refreshed.
+- Qualifying tasks are ordered by most recently accessed first. Tasks with missing or invalid `lastAccessedAt` values do not qualify.
+- The view respects the current search, project, status, due-date, and Hide Completed filters.
+- Normal archive boundaries remain in force: non-archived tasks participate in the normal Recently Accessed view, while archived tasks participate only when the Archive view is selected.
+- Parent-context rendering continues to apply: a visible recently accessed child includes its eligible parent hierarchy context in the main task grid without causing a parent to count as a Recently Accessed match.
+- The view label includes a tooltip or accessible description stating that it shows tasks accessed in the last 24 hours.
 
 ## Parent Context in Main Results
 
@@ -960,6 +992,7 @@ The top action bar mirrors the bottom actions:
 
 - Mark Complete
 - Cancel and Close
+- Clone Task
 - Save Task
 - Save and Close
 
@@ -971,6 +1004,7 @@ Behavior and presentation:
 - Includes accessible labels
 - Invokes the same underlying actions as the bottom buttons
 - Mark Complete is shown only when editing an incomplete task
+- Clone Task is shown only when editing an existing saved task
 - The bottom text buttons remain available
 
 ## Task Editor Save Actions
@@ -983,6 +1017,28 @@ The Add/Edit Task dialog provides distinct save actions at the bottom of the dia
 - If validation fails, neither action persists changes or closes the task editor.
 - The task editor's top actions include corresponding Save Task and Save and Close controls that invoke the same shared command logic as the bottom actions.
 - The existing Cancel and Close action does not save changes made since the most recent successful Save Task or Save and Close action.
+
+## Task Editor Parent Navigation
+
+When editing an existing child task, the displayed selected parent task is a navigation target:
+
+- Clicking the parent task name opens that parent task in the same task editor dialog, replacing the currently displayed child-task details.
+- Parent navigation follows the same in-dialog editor-navigation behavior used when a user clicks a sub-task in the Sub-Tasks tab.
+- The parent-task navigation control has an accessible name that identifies the parent task it opens and supports keyboard activation.
+- The existing control for removing the parent relationship remains a separate action and must not be triggered when navigating to the parent task.
+- The parent task is unavailable as a navigation target when the task has no parent or when the dialog is creating a new, unsaved task.
+
+## Task Editor Sub-Task Creation
+
+When editing an existing saved task, the Sub-Tasks tab provides an `Add Sub-Task` action:
+
+- The Add Sub-Task action is available while the Sub-Tasks tab is selected and is positioned with the tab's sub-task content.
+- Selecting Add Sub-Task opens the task editor for a new task in the same dialog.
+- The new task is initialized with the currently edited task as its parent, so its Parent Task field is preselected to that task.
+- The new sub-task also inherits the current task's project when a project is assigned.
+- The action does not create or persist a task record until the user saves the new sub-task through the normal task-editor save flow.
+- Add Sub-Task is unavailable when creating a new, unsaved task because a parent task record does not yet exist.
+- Opening the new sub-task follows the existing in-dialog navigation behavior used for selecting a sub-task or parent task.
 
 ## Robot Column
 
@@ -1440,3 +1496,27 @@ This permits time spent on blocked, deferred, canceled, or otherwise interrupted
 - The handler requests the browser's standard unsaved-changes confirmation dialog, allowing the user to remain in the application or proceed and discard unsaved changes.
 - The application must not attempt to supply custom dialog text or claim it can prevent the user from leaving after the user confirms the browser prompt.
 - When `saved` is `true`, no exit confirmation is requested.
+
+## v4.7.4 Task Editor Parent Navigation
+
+- Added in-dialog navigation from a child task's displayed parent task to that parent task's editor details.
+- Parent navigation matches existing sub-task editor navigation and keeps parent-relationship removal as a separate action.
+
+## v4.7.5 Task Editor Clone Action
+
+- Added Clone Task to the task editor before Save Task, with matching top and bottom controls.
+- The action clones the persisted source task through the existing clone rules, marks the dataset unsaved, and opens the new clone in the same editor.
+- Clone Task is unavailable for a new, unsaved task and does not persist pending editor changes before cloning.
+
+## v4.7.6 Task Editor Add Sub-Task
+
+- Added an Add Sub-Task action to the Sub-Tasks tab for saved tasks.
+- The action opens a new task in the same editor with the current task preselected as Parent Task and its project inherited when available.
+- The new task is not persisted until saved through the standard task-editor save actions.
+
+## v4.7.7 Task Access Tracking and Recently Accessed View
+
+- Added persisted `lastAccessedAt` tracking whenever a task is opened in the task editor.
+- Added a left-panel Recently Accessed view for tasks opened during the rolling prior 24 hours, ordered from most recently accessed to least recently accessed.
+- Clarified backward-compatible loading: datasets without `lastAccessedAt` load without errors and simply have no recently accessed history until tasks are opened.
+- Access tracking participates in the existing unsaved-state and browser exit-confirmation behavior until saved.
