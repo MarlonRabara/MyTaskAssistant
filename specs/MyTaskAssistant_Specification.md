@@ -683,6 +683,18 @@ The left navigation includes a `Recently Accessed` view that shows tasks accesse
 
 When a child task satisfies the active filters and is therefore visible in the main task-grid results, its parent task must also be shown even when the parent does not satisfy one or more active filters. The parent is contextual only; it does not count as a filter match. Higher ancestors are included recursively when available so the visible child retains its complete hierarchy path. Parent context never crosses the archive boundary: normal views include only non-archived ancestors, and the Archive view includes only archived ancestors. This rule applies to the main task-grid rendering only and does not change the filtered task set used by **Export View**.
 
+## Root-Level Task Row Emphasis
+
+The main task grid visually distinguishes root-level tasks, meaning tasks whose `parentId` is absent or empty:
+
+- Root-level task rows use a subtle, aesthetically restrained cool-blue background distinct from the standard white child-task rows. The treatment should support scanning hierarchy without competing with status, due-date, selection, hover, focus, or validation states.
+- The root-level task title uses the same blue token and visual color as the completed-task checkmark, with sufficient contrast against its row background and targeting WCAG 2.2 AA text contrast.
+- The root-level row background must be lighter than the previous cool-blue treatment so the oval status badge, including the `In Progress` badge, retains clearly visible shape, fill, and text contrast. The background remains supplemental hierarchy emphasis and must not visually merge with any status-pill color.
+- The treatment applies to both root parent tasks and standalone tasks, because neither has a parent task.
+- Child-task rows retain their existing standard background and title treatment.
+- The same styling applies in all main-grid views, including filtered, Recently Created, Recently Accessed, and Archive views.
+- The hierarchy marker, indentation, task type text, and accessible labels remain in place; color is additional visual emphasis rather than the only indicator of hierarchy.
+
 ## Due-Date Filter
 
 Available options:
@@ -1168,6 +1180,19 @@ Each row displays:
 - Total hours
 - Sunday-through-Saturday daily hour columns
 
+### Project grouping and subtotals
+
+The Weekly Timesheet preview groups eligible task rows by project:
+
+- Rows are grouped under their project name, with projects ordered alphabetically and task rows ordered alphabetically within each project.
+- Tasks without an assigned project are grouped under `No Project`.
+- Every task row retains its individual editable daily-hour inputs and its per-task total.
+- After the task rows in each project group, the preview displays a Project Total row that contains the project's combined total hours and combined hours for each Sunday-through-Saturday day column.
+- Editing a task's daily-hour input immediately recalculates its task total, its Project Total row, daily totals, and the Grand Total.
+- Project grouping does not change which tasks qualify for the timesheet or the existing daily-allocation behavior.
+
+The downloaded standalone Weekly Timesheet HTML uses the same project grouping, task ordering, Project Total rows, day totals, and Grand Total as the reviewed preview. Downloaded task rows are read-only display values rather than editable inputs.
+
 ### Daily allocation
 
 Because tasks currently store total Time Spent rather than dated time entries, the preview initially places the full task total on:
@@ -1539,3 +1564,19 @@ This permits time spent on blocked, deferred, canceled, or otherwise interrupted
 - Added a runtime-only Auto-Update Percent Complete checkbox below Time Spent without rearranging the existing editor layout.
 - It defaults to selected each time a task is loaded into the editor and is never persisted.
 - When selected, changing Time Spent recalculates Percent Complete from Time Spent divided by Estimated Hours when both are valid and Estimated Hours is greater than zero. When cleared, progress remains manual.
+
+## v4.7.9 Root-Level Task Row Emphasis
+
+- Added a cool-blue row-background and dark-blue task-title treatment for root-level tasks in the main grid.
+- Child-task rows retain their existing appearance, while hierarchy semantics and accessible labels remain available independently of color.
+
+## v4.7.10 Root-Level Row Color Refinement
+
+- Root-level task titles use the same blue as the completed-task checkmark.
+- The root-level cool-blue background is lightened to preserve the visibility and contrast of status pills, including In Progress.
+
+## v4.7.11 Weekly Timesheet Project Grouping
+
+- Added project-grouped task rows and Project Total rows to the editable Weekly Timesheet preview.
+- Individual task-day editing remains available and updates project, daily, and grand totals immediately.
+- The downloaded standalone timesheet HTML mirrors the same project grouping and subtotal structure.

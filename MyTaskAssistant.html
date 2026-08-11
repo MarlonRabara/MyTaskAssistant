@@ -542,6 +542,9 @@
     }
 
     tbody tr:hover { background: var(--surface-2); }
+    tbody tr.root-level-task { background: #f7faff; }
+    tbody tr.root-level-task:hover { background: #eef5ff; }
+    tbody tr.root-level-task .task-title strong { color: var(--accent); }
     tbody tr:last-child td { border-bottom: 0; }
 
     .task-title {
@@ -1552,7 +1555,7 @@
   <path d="M36 32.5v7M32.5 36h7" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/>
 </svg></div>
         <div>
-          <h1>MyTaskAssistant <span class="version-badge">v4.7.8</span></h1>
+          <h1>MyTaskAssistant <span class="version-badge">v4.7.10</span></h1>
           <p>Personal task manager designed by Marlon Rabara</p>
         </div>
       </div>
@@ -1961,7 +1964,7 @@
     let selectedDependencyIds = [];
     let saved = true;
 
-    const APPLICATION_VERSION = "v4.7.8";
+    const APPLICATION_VERSION = "v4.7.10";
 
     const $ = (id) => document.getElementById(id);
 
@@ -2917,7 +2920,7 @@ Calculated AI Assistance: ${percentage}%`;
           : '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4.5 10.5v8.75h15V10.5"></path><path d="M3.75 6.25h16.5v4.25H3.75z"></path><path d="M9 14.25h6"></path></svg>';
 
         return `
-          <tr class="task-row" data-task-id="${escapeHtml(task.id)}" data-parent-id="${escapeHtml(task.parentId || "")}">
+          <tr class="task-row${task.parentId ? "" : " root-level-task"}" data-task-id="${escapeHtml(task.id)}" data-parent-id="${escapeHtml(task.parentId || "")}">
             <td class="priority-cell">
               <div class="priority-control">
                 <button
