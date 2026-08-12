@@ -683,6 +683,27 @@ The left navigation includes a `Recently Accessed` view that shows tasks accesse
 
 When a child task satisfies the active filters and is therefore visible in the main task-grid results, its parent task must also be shown even when the parent does not satisfy one or more active filters. The parent is contextual only; it does not count as a filter match. Higher ancestors are included recursively when available so the visible child retains its complete hierarchy path. Parent context never crosses the archive boundary: normal views include only non-archived ancestors, and the Archive view includes only archived ancestors. This rule applies to the main task-grid rendering only and does not change the filtered task set used by **Export View**.
 
+### Parent Direct-Match Expansion
+
+When a parent task itself directly satisfies the active search text or another active filter:
+
+- The main task grid displays all of that matching parent's direct child tasks, even when an individual child does not independently satisfy the active filters.
+- The displayed child rows are contextual children; they do not count as independent filter matches and do not alter filtered task sets used by exports, metrics, or counts.
+- A direct matching child continues to display its parent hierarchy context, but does not cause its sibling tasks to appear unless the parent directly matches or a sibling independently matches.
+- The expansion applies recursively only to the direct children of each directly matching parent; descendants beyond those direct children appear only when they independently match, are required parent context, or are direct children of another directly matching parent.
+- Archive boundaries remain in force: normal views expand only non-archived children, while the Archive view expands only archived children.
+
+## Search Match Highlighting
+
+When Search text contributes to a task matching the main-grid results:
+
+- Matching text within visible task text is rendered in bright red and bold, including matches within a larger word. For example, searching for `our` renders the `our` portion of `your` in `Find your brother` in bright red bold text.
+- Highlighting is case-insensitive and preserves the original stored text casing.
+- All occurrences of the search text within a rendered text value are highlighted.
+- Highlighting must safely encode task content before rendering and must not introduce unsafe HTML injection.
+- The highlight treatment targets text that is visibly rendered from the matched task, beginning with task titles. Context-only parent and child rows that do not independently match the search text are not highlighted solely because they are shown for hierarchy context.
+- Highlight color is supplemental: bold emphasis and existing task labels/structure remain available so meaning is not communicated by color alone.
+
 ## Root-Level Task Row Emphasis
 
 The main task grid visually distinguishes root-level tasks, meaning tasks whose `parentId` is absent or empty:
@@ -1580,3 +1601,8 @@ This permits time spent on blocked, deferred, canceled, or otherwise interrupted
 - Added project-grouped task rows and Project Total rows to the editable Weekly Timesheet preview.
 - Individual task-day editing remains available and updates project, daily, and grand totals immediately.
 - The downloaded standalone timesheet HTML mirrors the same project grouping and subtotal structure.
+
+## v4.7.12 Main Search Hierarchy Expansion and Match Highlighting
+
+- A direct parent match expands the main grid to include all of that parent's direct child tasks, while a direct child match continues to show only its parent context and not unrelated siblings.
+- Added case-insensitive bright-red bold highlighting for all visible search-text matches within matching task text, including substring matches within words.

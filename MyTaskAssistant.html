@@ -559,6 +559,11 @@
       font-size: 14px;
     }
 
+    .search-match {
+      color: #dc2626;
+      font-weight: 800;
+    }
+
     .task-title small,
     .notes-cell {
       color: var(--muted);
@@ -1566,7 +1571,7 @@
   <path d="M36 32.5v7M32.5 36h7" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/>
 </svg></div>
         <div>
-          <h1>MyTaskAssistant <span class="version-badge">v4.7.11</span></h1>
+          <h1>MyTaskAssistant <span class="version-badge">v4.7.12</span></h1>
           <p>Personal task manager designed by Marlon Rabara</p>
         </div>
       </div>
@@ -1975,7 +1980,7 @@
     let selectedDependencyIds = [];
     let saved = true;
 
-    const APPLICATION_VERSION = "v4.7.11";
+    const APPLICATION_VERSION = "v4.7.12";
 
     const $ = (id) => document.getElementById(id);
 
@@ -1985,6 +1990,20 @@
       if (indicator) indicator.hidden = saved;
       const fileIndicator = $("fileUnsavedIndicator");
       if (fileIndicator) fileIndicator.hidden = saved;
+    }
+
+    function taskMatchesSearch(task, query) {
+      return Boolean(query) && JSON.stringify(task).toLowerCase().includes(query.toLowerCase());
+    }
+
+    function highlightSearchMatch(value, query) {
+      const text = String(value ?? "");
+      if (!query) return escapeHtml(text);
+      const escapedQuery = String(query).replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+      const matcher = new RegExp(`(${escapedQuery})`, "gi");
+      return text.split(matcher).map(part => part.toLowerCase() === query.toLowerCase()
+        ? `<span class="search-match">${escapeHtml(part)}</span>`
+        : escapeHtml(part)).join("");
     }
 
     function markTaskDataChanged() {
@@ -2134,6 +2153,14 @@
       }
 
       return data.tasks.filter(task => visibleTasks.has(String(task.id)));
+    }
+
+    function tasksWithVisibleHierarchy(tasks) {
+      const visibleTasks = new Map(tasks.map(task => [String(task.id), task]));
+      tasks.forEach(task => {
+        childTasks(task.id, task.archived).forEach(child => visibleTasks.set(String(child.id), child));
+      });
+      return tasksWithVisibleParents([...visibleTasks.values()]);
     }
 
     function isComplete(task) {
@@ -2693,8 +2720,7 @@ Calculated AI Assistance: ${percentage}%`;
 
       return data.tasks.filter(task => {
         if (Boolean(task.archived) !== archiveView) return false;
-        const searchable = JSON.stringify(task).toLowerCase();
-        if (q && !searchable.includes(q)) return false;
+        if (q && !taskMatchesSearch(task, q)) return false;
         if (hideCompleted && isComplete(task)) return false;
         if (status === "active" && isComplete(task)) return false;
         if (status !== "all" && status !== "active" && task.status !== status) return false;
@@ -2899,7 +2925,7 @@ Calculated AI Assistance: ${percentage}%`;
           : forcedView === "recently-accessed"
             ? mostRecentlyAccessedTasks(matchedTasks)
           : matchedTasks;
-      const tasks = tasksWithVisibleParents(baseTasks);
+      const tasks = tasksWithVisibleHierarchy(baseTasks);
       const orderedEntries = forcedView === "most-recent" || forcedView === "recently-created" || forcedView === "recently-accessed"
         ? (forcedView === "recently-accessed" ? mostRecentlyAccessedTasks(tasks) : mostRecentTasks(tasks, Number.POSITIVE_INFINITY)).map(task => ({ task, depth: taskDepth(task) }))
         : orderedTaskTree(tasks);
@@ -2909,6 +2935,8 @@ Calculated AI Assistance: ${percentage}%`;
       }
 
       $("taskRows").innerHTML = orderedEntries.map(({ task, depth }) => {
+        const searchQuery = $("searchInput").value.trim();
+        const titleMatchesSearch = taskMatchesSearch({ title: task.title }, searchQuery);
         const dependencyIds = Array.isArray(task.dependsOn) ? task.dependsOn : [];
         const blockedBy = dependencyIds.filter(id => {
           const dependency = data.tasks.find(t => String(t.id) === String(id));
@@ -2950,7 +2978,7 @@ Calculated AI Assistance: ${percentage}%`;
               <div class="task-title ${task.parentId ? "subtask" : ""}" style="--task-depth:${depth}">
                 <input type="checkbox" ${isComplete(task) ? "checked" : ""} aria-label="Mark ${escapeHtml(task.title)} complete" data-complete-id="${escapeHtml(task.id)}">
                 <div>
-                  <strong>${escapeHtml(task.title)}</strong>
+                  <strong>${titleMatchesSearch ? highlightSearchMatch(task.title, searchQuery) : escapeHtml(task.title)}</strong>
                   <small>${task.parentId ? "Subtask" : "Task"} · ID ${escapeHtml(task.id)}</small>
                 </div>
               </div>

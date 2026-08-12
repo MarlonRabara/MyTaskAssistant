@@ -1,6 +1,6 @@
 # MyTaskAssistant
 
-**Version:** v4.7.11
+**Version:** v4.7.12
 
 A local-first, single-file task manager for organizing projects, tracking effort, monitoring AI-assisted productivity, and producing weekly HTML timesheets. No installation, no backend, no database, no account — just open one HTML file in a modern browser.
 
@@ -28,6 +28,7 @@ A local-first, single-file task manager for organizing projects, tracking effort
 - **Clear hierarchy markers** — a green leaf beside Priority identifies a childless sub-task; a brown branch identifies a parent task with child tasks; and a blue standalone-item icon identifies a task with neither a parent nor child tasks. Hover a marker to see its parent-child relationship, including the direct child count or parent task name.
 - **Root-level row emphasis** — tasks without a parent use a very light cool-blue row background that preserves status-pill contrast, and titles use the same accent blue as the completed-task checkmark.
 - **Project-grouped timesheets** — Weekly Timesheet keeps editable task allocations but groups rows by project, with a per-project daily subtotal and total. Downloaded HTML mirrors the same grouping and subtotals.
+- **Search hierarchy and highlighting** — matching a parent shows its direct child tasks, while matching a child shows only its parent context. Matching title text is highlighted in bold bright red, including partial-word matches.
 - **Task-row actions** — Actions are ordered Goto Link, Clone, Create Child Task, Edit, Archive/Unarchive, and Delete. Goto Link is blue when Notes has a hyperlink, opens the first link in a new window, and is disabled when Notes has no link.
 - **Archive** — archive a task after an **Are you sure?** confirmation that names the task and shows how many descendants will be included. Archiving a parent archives all descendants so completed task sets can be retired together. Archived tasks disappear from normal views, reports, and exports, and can be restored from the left-panel **Archive** view with the Unarchive action. Cloning an archived child or adding a child to an archived parent automatically restores the parent chain.
 - **Filters and views** — search, project/status/due-date filters (including Due Yesterday, Due Last Week, and Due Next Month), Active/Completed/Overdue navigation, Most Recent, Recently Created, and Recently Accessed views, an Archive view, and hide-completed toggle.
