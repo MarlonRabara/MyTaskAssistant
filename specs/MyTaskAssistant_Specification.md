@@ -704,6 +704,16 @@ When Search text contributes to a task matching the main-grid results:
 - The highlight treatment targets text that is visibly rendered from the matched task, beginning with task titles. Context-only parent and child rows that do not independently match the search text are not highlighted solely because they are shown for hierarchy context.
 - Highlight color is supplemental: bold emphasis and existing task labels/structure remain available so meaning is not communicated by color alone.
 
+## Empty Main-Grid Search Guidance
+
+When active search text and filters produce no main-grid results:
+
+- The empty-state message continues to state that no tasks match the current filters and also identifies the currently selected left-panel navigation context.
+- The context is expressed as `You are currently on '[view name]'`, using the visible navigation label, such as `All Tasks`, `Active`, `Completed`, `Overdue`, `Most Recent`, `Recently Created`, `Recently Accessed`, or `Archive`.
+- The current-context phrase is rendered in bold red text so users can quickly recognize that switching the left-panel view may reveal the expected task.
+- The message remains understandable without color alone through its explicit wording and bold emphasis.
+- The current navigation context is derived dynamically so the guidance remains accurate for every supported left-panel view.
+
 ## Root-Level Task Row Emphasis
 
 The main task grid visually distinguishes root-level tasks, meaning tasks whose `parentId` is absent or empty:
@@ -1606,3 +1616,7 @@ This permits time spent on blocked, deferred, canceled, or otherwise interrupted
 
 - A direct parent match expands the main grid to include all of that parent's direct child tasks, while a direct child match continues to show only its parent context and not unrelated siblings.
 - Added case-insensitive bright-red bold highlighting for all visible search-text matches within matching task text, including substring matches within words.
+
+## v4.7.13 Empty Search Context Guidance
+
+- Enhanced the no-results main-grid message with the dynamically identified current left-panel context in bold red text, helping users recognize when another context view may contain the intended task.

@@ -1571,7 +1571,7 @@
   <path d="M36 32.5v7M32.5 36h7" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/>
 </svg></div>
         <div>
-          <h1>MyTaskAssistant <span class="version-badge">v4.7.12</span></h1>
+          <h1>MyTaskAssistant <span class="version-badge">v4.7.13</span></h1>
           <p>Personal task manager designed by Marlon Rabara</p>
         </div>
       </div>
@@ -1980,7 +1980,7 @@
     let selectedDependencyIds = [];
     let saved = true;
 
-    const APPLICATION_VERSION = "v4.7.12";
+    const APPLICATION_VERSION = "v4.7.13";
 
     const $ = (id) => document.getElementById(id);
 
@@ -2915,6 +2915,19 @@ Calculated AI Assistance: ${percentage}%`;
       return `<span class="completion-timing-icon ${completedOnTime ? "on-time" : "late"}" title="${escapeHtml(label)}" aria-label="${escapeHtml(label)}" role="img">${icon}</span>`;
     }
 
+    function currentNavigationViewLabel() {
+      return {
+        all: "All Tasks",
+        active: "Active",
+        completed: "Completed",
+        overdue: "Overdue",
+        "most-recent": "Most Recent",
+        "recently-created": "Recently Created",
+        "recently-accessed": "Recently Accessed",
+        archive: "Archive"
+      }[forcedView] || "All Tasks";
+    }
+
     function renderTable() {
       updateSortIndicators();
       const matchedTasks = filteredTasks();
@@ -2930,7 +2943,7 @@ Calculated AI Assistance: ${percentage}%`;
         ? (forcedView === "recently-accessed" ? mostRecentlyAccessedTasks(tasks) : mostRecentTasks(tasks, Number.POSITIVE_INFINITY)).map(task => ({ task, depth: taskDepth(task) }))
         : orderedTaskTree(tasks);
       if (!orderedEntries.length) {
-        $("taskRows").innerHTML = '<tr><td colspan="12"><div class="empty">No tasks match the current filters.</div></td></tr>';
+        $("taskRows").innerHTML = `<tr><td colspan="12"><div class="empty">No tasks match the current filters. <span class="search-match">You are currently on '${escapeHtml(currentNavigationViewLabel())}'.</span></div></td></tr>`;
         return;
       }
 
