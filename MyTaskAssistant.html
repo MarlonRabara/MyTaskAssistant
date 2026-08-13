@@ -1571,7 +1571,7 @@
   <path d="M36 32.5v7M32.5 36h7" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/>
 </svg></div>
         <div>
-          <h1>MyTaskAssistant <span class="version-badge">v4.7.13</span></h1>
+          <h1>MyTaskAssistant <span class="version-badge">v4.7.14</span></h1>
           <p>Personal task manager designed by Marlon Rabara</p>
         </div>
       </div>
@@ -1801,6 +1801,13 @@
         <label for="taskTitleInput">Task title</label>
         <input class="field" id="taskTitleInput" type="text" />
       </div>
+      <div class="form-group full">
+        <div class="notes-label-row">
+          <label for="taskNotesInput">Notes</label>
+          <button class="btn btn-secondary expand-notes-btn" id="expandNotesBtn" type="button" aria-expanded="false">Expand Notes</button>
+        </div>
+        <textarea id="taskNotesInput"></textarea>
+      </div>
       <div class="form-group">
         <label for="taskProjectInput">Project</label>
         <select class="select" id="taskProjectInput">
@@ -1888,13 +1895,6 @@
         <input class="field" id="taskPriorityInput" type="number" min="1" step="1" value="1" />
         <div class="typeahead-helper">Lower numbers appear first among tasks at the same level.</div>
       </div>
-      <div class="form-group full">
-        <div class="notes-label-row">
-          <label for="taskNotesInput">Notes</label>
-          <button class="btn btn-secondary expand-notes-btn" id="expandNotesBtn" type="button" aria-expanded="false">Expand Notes</button>
-        </div>
-        <textarea id="taskNotesInput"></textarea>
-      </div>
         </div>
         <div class="task-editor-panel" id="subTasksPanel" role="tabpanel" hidden>
           <div class="subtask-panel-actions">
@@ -1980,7 +1980,7 @@
     let selectedDependencyIds = [];
     let saved = true;
 
-    const APPLICATION_VERSION = "v4.7.13";
+    const APPLICATION_VERSION = "v4.7.14";
 
     const $ = (id) => document.getElementById(id);
 

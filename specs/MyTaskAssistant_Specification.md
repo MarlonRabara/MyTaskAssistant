@@ -1061,6 +1061,15 @@ The Add/Edit Task dialog provides distinct save actions at the bottom of the dia
 - The task editor's top actions include corresponding Save Task and Save and Close controls that invoke the same shared command logic as the bottom actions.
 - The existing Cancel and Close action does not save changes made since the most recent successful Save Task or Save and Close action.
 
+## Task Editor Notes Placement
+
+The task editor places the Notes control directly below Task Title:
+
+- The Notes label, text area, and existing Expand Notes / Collapse Notes control move from their prior lower-form position to immediately after the Task Title field.
+- Expand Notes and Collapse Notes retain their existing behavior, accessible state, labels, and keyboard operation after relocation.
+- No other task-editor fields, rows, grouping, alignment, order, or layout behavior is changed by the Notes relocation.
+- The Notes control remains full width within the Task Detail form.
+
 ## Task Editor Auto-Update Percent Complete
 
 The task editor provides a runtime-only `Auto-Update Percent Complete` checkbox to help users keep progress aligned with recorded effort.
@@ -1620,3 +1629,8 @@ This permits time spent on blocked, deferred, canceled, or otherwise interrupted
 ## v4.7.13 Empty Search Context Guidance
 
 - Enhanced the no-results main-grid message with the dynamically identified current left-panel context in bold red text, helping users recognize when another context view may contain the intended task.
+
+## v4.7.14 Task Editor Notes Placement
+
+- Moved the full-width Notes control, including Expand Notes and Collapse Notes behavior, directly below Task Title.
+- Preserved every other task-editor field's existing grouping, ordering, alignment, and behavior.
