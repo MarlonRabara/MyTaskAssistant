@@ -1,5 +1,5 @@
 # MyTaskAssistant Specification
-**Application Version:** v4.7.2
+**Application Version:** v4.7.16
 **Last Updated:** 2026-08-01
 
 ## Overview
@@ -1016,6 +1016,13 @@ Characteristics:
 - Archive requires an `Are you sure?` confirmation before the state changes
 - Delete icon highlights red on hover
 
+## Main Task Grid Hours Display
+
+- The main task grid's Hours value displays the task's Estimated Hours, including calculated Estimated Hours for parent-task rollups.
+- Hovering or focusing the Hours value continues to show both Estimated Hours and Time Spent.
+- When both Estimated Hours and Time Spent are greater than zero and Time Spent exceeds Estimated Hours, the displayed Hours value is bold red to identify an overrun without relying on color alone.
+- The standalone current-view HTML report mirrors this Hours display, tooltip, and overrun treatment for its Estimated Hours column. Its separate Time Spent column remains unchanged.
+
 ## AI Assistance Slider
 
 The Add/Edit Task dialog includes a compact slider:
@@ -1092,6 +1099,16 @@ When editing an existing child task, the displayed selected parent task is a nav
 - The parent-task navigation control has an accessible name that identifies the parent task it opens and supports keyboard activation.
 - The existing control for removing the parent relationship remains a separate action and must not be triggered when navigating to the parent task.
 - The parent task is unavailable as a navigation target when the task has no parent or when the dialog is creating a new, unsaved task.
+
+## Task Editor Dependency Lookup Ordering
+
+When the Dependency lookup opens with no search text, it displays eligible dependency tasks. As the user types, it filters those same eligible tasks by the existing dependency search fields. In both cases, the filtered suggestions are ordered by relevance before the result limit is applied:
+
+1. Tasks that share the edited task's non-empty parent task, sorted by task name.
+2. Remaining tasks in the edited task's project, sorted by task name.
+3. All remaining eligible tasks, sorted by task name.
+
+The first group is omitted when the edited task has no parent. A task appears in only its highest-priority applicable group. Existing dependency eligibility rules, selected-dependency exclusion, selected-parent exclusion, search matching, and result limits remain unchanged.
 
 ## Task Editor Sub-Task Creation
 
@@ -1634,3 +1651,14 @@ This permits time spent on blocked, deferred, canceled, or otherwise interrupted
 
 - Moved the full-width Notes control, including Expand Notes and Collapse Notes behavior, directly below Task Title.
 - Preserved every other task-editor field's existing grouping, ordering, alignment, and behavior.
+
+## v4.7.15 Task Editor Dependency Lookup Ordering
+
+- Dependency lookup suggestions prioritize tasks that share the edited task's parent, then remaining tasks in its project, then all other eligible tasks.
+- Each priority group is sorted by task name before the existing suggestion limit is applied, both before and after a user enters search text.
+
+## v4.7.16 Main Task Grid Estimated Hours and Overrun Indicator
+
+- The main task grid now displays Estimated Hours instead of Time Spent in its Hours column while retaining the Estimated/Actual hover details.
+- Estimated Hours is bold red when positive Time Spent exceeds positive Estimated Hours.
+- The standalone current-view HTML report applies the same Estimated Hours display, tooltip, and overrun treatment.
