@@ -1,5 +1,5 @@
 # MyTaskAssistant Specification
-**Application Version:** v4.7.16
+**Application Version:** v4.7.17
 **Last Updated:** 2026-08-01
 
 ## Overview
@@ -703,6 +703,15 @@ When Search text contributes to a task matching the main-grid results:
 - Highlighting must safely encode task content before rendering and must not introduce unsafe HTML injection.
 - The highlight treatment targets text that is visibly rendered from the matched task, beginning with task titles. Context-only parent and child rows that do not independently match the search text are not highlighted solely because they are shown for hierarchy context.
 - Highlight color is supplemental: bold emphasis and existing task labels/structure remain available so meaning is not communicated by color alone.
+
+## Active Main Search Indicator
+
+The main-view Search text field visibly indicates when its text filter is active:
+
+- When the field contains one or more characters, its border is red.
+- The red border indicates that the visible task results are being filtered by Search text; it does not replace existing search-match highlighting.
+- When the field is cleared so its value is empty, the active-search border treatment is removed and the field returns to its normal border color and formatting.
+- The treatment must remain visible in supported color schemes and must not remove the field's existing keyboard-focus indication.
 
 ## Empty Main-Grid Search Guidance
 
@@ -1662,3 +1671,8 @@ This permits time spent on blocked, deferred, canceled, or otherwise interrupted
 - The main task grid now displays Estimated Hours instead of Time Spent in its Hours column while retaining the Estimated/Actual hover details.
 - Estimated Hours is bold red when positive Time Spent exceeds positive Estimated Hours.
 - The standalone current-view HTML report applies the same Estimated Hours display, tooltip, and overrun treatment.
+
+## v4.7.17 Active Main Search Indicator
+
+- The main Search text field uses a red border while it contains text, making an active text filter apparent.
+- Clearing the Search text restores the field's normal border and formatting without affecting existing search-match highlighting or keyboard focus behavior.

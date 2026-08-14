@@ -26,6 +26,7 @@
       --danger-soft: #fff7ed;
       --blocked: #b91c1c;
       --blocked-soft: #fef2f2;
+      --active-search: #b91c1c;
       --shadow-sm: 0 1px 2px rgba(15, 23, 42, .05);
       --shadow-md: 0 12px 30px rgba(15, 23, 42, .08);
       --radius: 16px;
@@ -93,6 +94,7 @@
         --warning-soft: #3a2d0e;
         --danger-soft: #412416;
         --blocked-soft: #431d22;
+        --active-search: #f87171;
         --shadow-md: 0 18px 38px rgba(0, 0, 0, .25);
       }
 
@@ -370,6 +372,15 @@
     textarea:focus {
       border-color: var(--accent);
       box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 18%, transparent);
+    }
+
+    #searchInput:not(:placeholder-shown) {
+      border-color: var(--active-search);
+    }
+
+    #searchInput:not(:placeholder-shown):focus {
+      border-color: var(--active-search);
+      box-shadow: 0 0 0 3px color-mix(in srgb, var(--active-search) 18%, transparent);
     }
 
     .toggle {
@@ -1574,7 +1585,7 @@
   <path d="M36 32.5v7M32.5 36h7" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/>
 </svg></div>
         <div>
-          <h1>MyTaskAssistant <span class="version-badge">v4.7.14</span></h1>
+          <h1>MyTaskAssistant <span class="version-badge">v4.7.17</span></h1>
           <p>Personal task manager designed by Marlon Rabara</p>
         </div>
       </div>
@@ -1983,7 +1994,7 @@
     let selectedDependencyIds = [];
     let saved = true;
 
-    const APPLICATION_VERSION = "v4.7.16";
+    const APPLICATION_VERSION = "v4.7.17";
 
     const $ = (id) => document.getElementById(id);
 
