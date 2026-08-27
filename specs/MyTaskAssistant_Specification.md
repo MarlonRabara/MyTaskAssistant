@@ -1,6 +1,6 @@
 # MyTaskAssistant Specification
-**Application Version:** v4.7.17
-**Last Updated:** 2026-08-01
+**Application Version:** v4.7.20
+**Last Updated:** 2026-08-27
 
 ## Overview
 
@@ -860,6 +860,7 @@ Template binding requirements:
 
 - The generated report uses the supplied report template structure, styling, and client-side rendering script.
 - The template remains self-contained: embedded CSS, embedded JavaScript, and no external network or file dependencies.
+- JavaScript source emitted from the outer HTML template must remain syntactically valid in the downloaded report. Escape sequences intended for the generated report script, including `\n` inside quoted JavaScript strings, must be double-escaped in the outer template so they are emitted as source escapes rather than literal control characters.
 - The generated report replaces the template's sample JSON with the actual current-view report payload in:
 
 ```html
@@ -881,6 +882,7 @@ Template binding requirements:
 - `tasks` contains only the currently visible task records in the same hierarchy-preserving order used by `Export View`.
 - The template's placeholder/sample JSON data must never be emitted as report data unless it is the actual current application data.
 - The template script is responsible for rendering the report from `embeddedData` into the existing template regions.
+- Before the template script executes, the generated document must contain every required bound region listed below. The exporter must not emit a template that omits those regions, because the renderer depends on them during initialization.
 - The report template includes the following report sections and bound regions:
   - Source card: `sourceApp`, `sourceVersion`, `sourceUpdated`, `sourceSchema`
   - KPI grid: `kpiGrid`
@@ -895,6 +897,9 @@ Template binding requirements:
   - Data quality audit: `auditGrid`, `auditFindings`
   - Footer timestamp: `footerGenerated`
 - The generated report should include enough task information to be useful outside the application, including project, task title, status, progress, due date, days remaining or completion state, hours, AI Hours Saved or AI contribution values when available, dependencies, notes, and update timestamps.
+- The report must preserve the task's stored terminal status. Both `Completed` and `Closed` are terminal states: neither is active, overdue, or awaiting a deadline in report calculations.
+- `Closed` must remain visibly distinct from `Completed` in the status distribution, task register, and any status-dependent styling.
+- The report's data-quality audit must treat a `Closed` task with 100% progress and a completion date as valid; it must not report that combination as a status-consistency finding.
 
 Default filename:
 
@@ -1676,3 +1681,19 @@ This permits time spent on blocked, deferred, canceled, or otherwise interrupted
 
 - The main Search text field uses a red border while it contains text, making an active text filter apparent.
 - Clearing the Search text restores the field's normal border and formatting without affecting existing search-match highlighting or keyboard focus behavior.
+
+## v4.7.18 Export Report Closed Status Preservation
+
+- Corrected the standalone current-view HTML report so `Closed` has the same terminal-state behavior as `Completed` without losing its distinct status label and visual treatment.
+- Report attention, deadline, KPI, and data-quality calculations exclude both terminal statuses from active-work and overdue logic.
+- A valid `Closed` task at 100% progress with a completion date is not reported as a data-quality inconsistency.
+
+## v4.7.19 Export Report Template Region Restoration
+
+- Corrected the generated standalone report template to include all required bound report regions before its client-side renderer executes.
+- A generated report must render its source metadata, KPI grid, summary, status distribution, project portfolio, attention list, timeline, task register, effort summary, AI contribution summary, data-quality audit, and footer rather than producing a blank document.
+
+## v4.7.20 Export Report Script Escape Preservation
+
+- Corrected outer-template escaping so generated report JavaScript preserves source escape sequences rather than emitting invalid literal newlines inside quoted strings.
+- The standalone report must parse and run when its task table includes the Estimated/Actual hours tooltip.
